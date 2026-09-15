@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { openDb } from "./db/client.js";
 import { runMigrations } from "./db/migrate.js";
 import { events } from "./db/schema.js";
+import { AccountService } from "./services/accounts.js";
+import { JobQueue } from "./services/pipeline/queue.js";
 import { createApp } from "./app.js";
 
 let app: ReturnType<typeof createApp>;
@@ -18,7 +20,9 @@ beforeAll(() => {
     { kind: "crawl", outcome: "failed" },
     { kind: "email", outcome: "success" },
   ]).run();
-  app = createApp(db, { requestLog: false });
+  const accounts = new AccountService(db);
+  const queue = new JobQueue(db);
+  app = createApp(db, { accounts, queue }, { requestLog: false });
 });
 
 describe("server", () => {
@@ -33,5 +37,12 @@ describe("server", () => {
     const body = await res.json();
     expect(body.counts.crawl).toEqual({ success: 1, failed: 1, manual_fallback: 0 });
     expect(body.counts.email.success).toBe(1);
+  });
+
+  it("queue status is idle with no jobs", async () => {
+    const res = await app.request("/api/queue");
+    const body = await res.json();
+    expect(body.state).toBe("idle");
+    expect(body.queuedCount).toBe(0);
   });
 });

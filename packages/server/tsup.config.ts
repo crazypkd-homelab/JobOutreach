@@ -9,5 +9,5 @@ export default defineConfig({
   clean: true,
   // Bundle the workspace package so the runtime image only needs node_modules for native/external deps.
   noExternal: ["@joboutreach/shared"],
-  external: ["better-sqlite3"],
+  external: ["better-sqlite3", "playwright", "playwright-core"],
 });

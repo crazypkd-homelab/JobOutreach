@@ -13,15 +13,19 @@
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@joboutreach/shared": "workspace:*",
+    "@mozilla/readability": "^0.6.0",
     "better-sqlite3": "^11.5.0",
     "drizzle-orm": "^0.36.4",
     "hono": "^4.6.12",
+    "linkedom": "^0.18.13",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.1",
     "drizzle-kit": "^0.28.1",
+    "playwright": "^1.63.0",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",

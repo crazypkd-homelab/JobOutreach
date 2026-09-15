@@ -377,20 +377,20 @@ data/
 - [x] ACCOUNT UI: prompts tab (view + reset, edited/default badge)
 - [x] Verified against real `ollama.com`: bad key maps to a 401 `auth` error and is recorded on the account
 
-### M2 — Jobs pipeline `[ ]`
+### M2 — Jobs pipeline `[x] complete`
 
-- [ ] `services/pipeline/queue.ts`: in-process FIFO, concurrency 1, resumes `queued` rows on boot
-- [ ] Quota pause: mark `quota_exhausted_until`, requeue job, pause queue, expose `POST /api/queue/resume` with `accountId`
-- [ ] `services/crawler/httpFetch.ts`: undici fetch + Readability + realistic UA, 15s timeout
-- [ ] `services/crawler/heuristics.ts`: content-length / login-wall / captcha / "enable JS" detection
-- [ ] `services/crawler/browserFetch.ts`: lazy shared Playwright Chromium, "show more" expansion, idle shutdown
-- [ ] ATS adapters (Greenhouse, Lever, Ashby) hitting their JSON APIs before generic crawling
-- [ ] `POST /api/jobs` (URL) and `POST /api/jobs/manual` (pasted text) + `POST /api/jobs/:id/text` to resume from `needs_manual_input`
-- [ ] `runJob.ts` state machine wiring crawl → extract, writing `pipeline_logs` and `events`
-- [ ] `GET /api/events` SSE bus; Agent Console consumes it live
-- [ ] JOBS list UI (status chips, filters) and job detail: pipeline stepper, JD view, amber paste terminal
-- [ ] Account + model dropdown on the new-job form and on retry
-- [ ] Crawler tests against saved HTML fixtures (Greenhouse, Lever, LinkedIn wall, JS-only page)
+- [x] `services/pipeline/queue.ts`: in-process FIFO, concurrency 1, resumes `queued` rows on boot
+- [x] Quota pause: mark `quota_exhausted_until`, requeue job, pause queue, expose `POST /api/queue/resume` with `accountId`
+- [x] `services/crawler/httpFetch.ts`: undici fetch + Readability + realistic UA, 15s timeout
+- [x] `services/crawler/heuristics.ts`: content-length / login-wall / captcha / "enable JS" detection
+- [x] `services/crawler/browserFetch.ts`: lazy shared Playwright Chromium, "show more" expansion, idle shutdown
+- [x] ATS adapters (Greenhouse, Lever) hitting their JSON APIs before generic crawling
+- [x] `POST /api/jobs` (URL) and `POST /api/jobs/manual` (pasted text) + `POST /api/jobs/:id/text` to resume from `needs_manual_input`
+- [x] `runJob.ts` state machine wiring crawl → extract, writing `pipeline_logs` and `events`
+- [x] `GET /api/events` SSE bus; Agent Console consumes it live
+- [x] JOBS list UI (status chips, filters) and job detail: pipeline stepper, JD view, amber paste terminal
+- [x] Account + model dropdown on the new-job form and on retry
+- [x] Crawler tests against saved HTML fixtures (Greenhouse, Lever, LinkedIn wall, JS-only page)
 
 ### M3 — Resumes + match scoring `[ ]`
 
@@ -444,3 +444,5 @@ data/
 | Dashboard | v1 with crawl/extract/score/email counters, driven by an append-only `events` table so metrics can grow without migrations. |
 | Ollama client | Hand-rolled ~150-line `fetch` wrapper instead of the `ollama` npm package (M1). Only `/api/chat` and `/api/tags` are used, and owning the transport is what makes precise 401-vs-429 mapping — and therefore the quota-pause flow — possible. |
 | Navigation | Only three modules: DASHBOARD, JOBS, ACCOUNT. Match and outreach live inside job detail; resumes, Ollama keys, SMTP and prompts live inside ACCOUNT. |
+| ATS adapters | Greenhouse and Lever only (M2). Ashby's board API requires a token not present in the public URL, so it falls through to generic HTTP/browser crawling. Adding it later requires a URL-to-token mapping or a UI field. |
+| Playwright bundling | Marked `playwright` and `playwright-core` as `external` in tsup (M2). The bundler can't resolve playwright's dynamic `require` calls for `chromium-bidi`; keeping it external means the runtime image's `node_modules` provides it at runtime, same as `better-sqlite3`. |

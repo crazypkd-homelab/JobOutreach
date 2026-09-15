@@ -3,8 +3,9 @@ import { sql } from "drizzle-orm";
 import type { DashboardCounts } from "@joboutreach/shared";
 import type { Db } from "../db/client.js";
 import { events } from "../db/schema.js";
+import type { JobQueue } from "../services/pipeline/queue.js";
 
-export function dashboardRoutes(db: Db) {
+export function dashboardRoutes(db: Db, queue: JobQueue) {
   const app = new Hono();
 
   app.get("/", (c) => {
@@ -24,7 +25,7 @@ export function dashboardRoutes(db: Db) {
       const bucket = counts[r.kind as keyof DashboardCounts] as Record<string, number> | undefined;
       if (bucket && r.outcome in bucket) bucket[r.outcome] = r.n;
     }
-    return c.json({ counts, queue: { state: "idle" as const } });
+    return c.json({ counts, queue: queue.getStatus() });
   });
 
   return app;

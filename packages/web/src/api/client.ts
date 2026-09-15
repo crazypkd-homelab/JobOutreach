@@ -1,14 +1,21 @@
 import type {
   AccountView,
   CreateAccountInput,
+  CreateJobInput,
+  CreateManualJobInput,
   DashboardCounts,
+  JobView,
   PromptView,
+  QueueStatus,
+  ResumeJobInput,
+  ResumeQueueInput,
+  RetryJobInput,
   UpdateAccountInput,
 } from "@joboutreach/shared";
 
 export interface DashboardResponse {
   counts: DashboardCounts;
-  queue: { state: "idle" | "running" | "paused" };
+  queue: QueueStatus;
 }
 
 export class ApiRequestError extends Error {
@@ -54,5 +61,22 @@ export const api = {
   prompts: {
     list: () => request<PromptView[]>("/prompts"),
     reset: (name: string) => request<PromptView>(`/prompts/${name}/reset`, { method: "POST" }),
+  },
+
+  jobs: {
+    list: () => request<JobView[]>("/jobs"),
+    create: (input: CreateJobInput) => request<JobView>("/jobs", { method: "POST", body: JSON.stringify(input) }),
+    createManual: (input: CreateManualJobInput) =>
+      request<JobView>("/jobs/manual", { method: "POST", body: JSON.stringify(input) }),
+    get: (id: number) => request<JobView>(`/jobs/${id}`),
+    resumeWithText: (id: number, input: ResumeJobInput) =>
+      request<JobView>(`/jobs/${id}/text`, { method: "POST", body: JSON.stringify(input) }),
+    retry: (id: number, input: RetryJobInput) =>
+      request<JobView>(`/jobs/${id}/retry`, { method: "POST", body: JSON.stringify(input) }),
+  },
+
+  queue: {
+    status: () => request<QueueStatus>("/queue"),
+    resume: (input: ResumeQueueInput) => request<QueueStatus>("/queue/resume", { method: "POST", body: JSON.stringify(input) }),
   },
 };

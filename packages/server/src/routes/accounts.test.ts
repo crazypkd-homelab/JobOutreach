@@ -6,6 +6,8 @@ import type { AccountView } from "@joboutreach/shared";
 import { bootstrap } from "../config.js";
 import { openDb } from "../db/client.js";
 import { runMigrations } from "../db/migrate.js";
+import { AccountService } from "../services/accounts.js";
+import { JobQueue } from "../services/pipeline/queue.js";
 import { createApp } from "../app.js";
 
 let app: ReturnType<typeof createApp>;
@@ -28,7 +30,9 @@ beforeEach(() => {
   bootstrap(); // needed for the encryption secret
   const db = openDb(join(mkdtempSync(join(tmpdir(), "jo-acc-")), "test.db"));
   runMigrations(db);
-  app = createApp(db, { requestLog: false });
+  const accounts = new AccountService(db);
+  const queue = new JobQueue(db);
+  app = createApp(db, { accounts, queue }, { requestLog: false });
 });
 
 afterEach(() => vi.unstubAllGlobals());

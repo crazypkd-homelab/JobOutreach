@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { JobDescription, JobSourceType, JobStatus } from "./job.js";
 
 export const CreateAccountInput = z.object({
   label: z.string().min(1).max(60),
@@ -44,3 +45,79 @@ export type PromptView = z.infer<typeof PromptView>;
 
 export const ApiError = z.object({ error: z.string(), kind: z.string().optional() });
 export type ApiError = z.infer<typeof ApiError>;
+
+// ─── Jobs ──────────────────────────────────────────────────────────────────
+
+export const CreateJobInput = z.object({
+  sourceUrl: z.string().url().max(2000),
+  accountId: z.number().int().positive(),
+  model: z.string().min(1).optional(),
+});
+export type CreateJobInput = z.infer<typeof CreateJobInput>;
+
+export const CreateManualJobInput = z.object({
+  text: z.string().min(100).max(50_000),
+  sourceUrl: z.string().url().max(2000).optional().or(z.literal("")),
+  accountId: z.number().int().positive(),
+  model: z.string().min(1).optional(),
+});
+export type CreateManualJobInput = z.infer<typeof CreateManualJobInput>;
+
+export const ResumeJobInput = z.object({
+  text: z.string().min(100).max(50_000),
+  accountId: z.number().int().positive(),
+  model: z.string().min(1).optional(),
+});
+export type ResumeJobInput = z.infer<typeof ResumeJobInput>;
+
+export const RetryJobInput = z.object({
+  accountId: z.number().int().positive(),
+  model: z.string().min(1).optional(),
+});
+export type RetryJobInput = z.infer<typeof RetryJobInput>;
+
+export const JobView = z.object({
+  id: z.number(),
+  sourceUrl: z.string().nullable(),
+  sourceType: JobSourceType,
+  status: JobStatus,
+  failureReason: z.string().nullable(),
+  ollamaAccountId: z.number().nullable(),
+  modelUsed: z.string().nullable(),
+  title: z.string().nullable(),
+  company: z.string().nullable(),
+  location: z.string().nullable(),
+  jd: JobDescription.nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type JobView = z.infer<typeof JobView>;
+
+export const QueueState = z.enum(["idle", "running", "paused"]);
+export type QueueState = z.infer<typeof QueueState>;
+
+export const QueueStatus = z.object({
+  state: QueueState,
+  runningJobId: z.number().nullable(),
+  queuedCount: z.number(),
+  pausedReason: z.string().nullable(),
+});
+export type QueueStatus = z.infer<typeof QueueStatus>;
+
+export const ResumeQueueInput = z.object({
+  accountId: z.number().int().positive(),
+});
+export type ResumeQueueInput = z.infer<typeof ResumeQueueInput>;
+
+// ─── SSE events ────────────────────────────────────────────────────────────
+
+export const PipelineEvent = z.object({
+  type: z.enum(["log", "job", "queue"]),
+  jobId: z.number().nullable().optional(),
+  level: z.string().optional(),
+  message: z.string().optional(),
+  status: z.string().optional(),
+  queueState: z.string().optional(),
+  ts: z.string(),
+});
+export type PipelineEvent = z.infer<typeof PipelineEvent>;
