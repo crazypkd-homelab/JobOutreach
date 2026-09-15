@@ -31,7 +31,7 @@ export function Shell() {
   const q = (queue && QUEUE_INDICATOR[queue.state]) ?? FALLBACK_INDICATOR;
 
   return (
-    <div className="scanlines h-screen grid grid-cols-[220px_1fr] grid-rows-[1fr_200px]">
+    <div className="scanlines h-screen grid grid-cols-[220px_1fr] grid-rows-[1fr_140px]">
       <aside className="row-span-2 border-r border-grid bg-panel/60 flex flex-col">
         <div className="px-4 py-5 border-b border-grid">
           <div className="text-[10px] tracking-[0.3em] text-slate-500">SYS://</div>
