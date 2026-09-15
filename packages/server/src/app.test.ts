@@ -18,7 +18,7 @@ beforeAll(() => {
     { kind: "crawl", outcome: "failed" },
     { kind: "email", outcome: "success" },
   ]).run();
-  app = createApp(db);
+  app = createApp(db, { requestLog: false });
 });
 
 describe("server", () => {

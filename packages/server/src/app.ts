@@ -6,15 +6,24 @@ import { join, relative } from "node:path";
 import type { Db } from "./db/client.js";
 import { WEB_DIST_DIR } from "./config.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
+import { accountRoutes } from "./routes/accounts.js";
+import { promptRoutes } from "./routes/prompts.js";
 
-export function createApp(db: Db) {
+export interface AppOptions {
+  /** Disabled in tests to keep output readable. */
+  requestLog?: boolean;
+}
+
+export function createApp(db: Db, { requestLog = true }: AppOptions = {}) {
   const app = new Hono();
-  app.use(logger());
+  if (requestLog) app.use(logger());
 
   app.get("/healthz", (c) => c.json({ ok: true }));
 
   const api = new Hono();
   api.route("/dashboard", dashboardRoutes(db));
+  api.route("/accounts", accountRoutes(db));
+  api.route("/prompts", promptRoutes());
   api.notFound((c) => c.json({ error: "not found" }, 404));
   app.route("/api", api);
 

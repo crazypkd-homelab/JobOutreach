@@ -1,54 +1,47 @@
-const SECTIONS = [
-  {
-    id: "ollama",
-    label: "ollama keys",
-    hint: "add one or more Ollama Cloud API keys. pick which account each crawl or score run uses, with per-task model defaults (extract: gpt-oss:20b, score: gpt-oss:120b).",
-    milestone: "m1",
-  },
-  {
-    id: "resumes",
-    label: "resumes",
-    hint: "upload PDF/DOCX resumes, review the extracted text, and mark which ones are active for scoring.",
-    milestone: "m3",
-  },
-  {
-    id: "smtp",
-    label: "email (smtp)",
-    hint: "your own SMTP host and credentials, sender identity, and a test-send button.",
-    milestone: "m4",
-  },
-  {
-    id: "prompts",
-    label: "prompts",
-    hint: "view the extraction and scoring prompts loaded from data/prompts, with reset-to-default.",
-    milestone: "m1",
-  },
-];
+import { useState } from "react";
+import { OllamaKeysTab } from "./OllamaKeysTab";
+import { PromptsTab } from "./PromptsTab";
+
+const TABS = [
+  { id: "ollama", label: "ollama keys", ready: true },
+  { id: "prompts", label: "prompts", ready: true },
+  { id: "resumes", label: "resumes", ready: false, hint: "upload PDF/DOCX resumes and review the extracted text — milestone 3" },
+  { id: "smtp", label: "email (smtp)", ready: false, hint: "your SMTP host, credentials and sender identity — milestone 4" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 export function AccountPage() {
+  const [tab, setTab] = useState<TabId>("ollama");
+  const active = TABS.find((t) => t.id === tab)!;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <header>
         <div className="panel-title">module 02</div>
         <h1 className="text-xl neon-text-cyan tracking-widest">ACCOUNT</h1>
-        <p className="mt-2 text-xs text-slate-500">
-          everything that belongs to you: credentials, resumes, and prompt configuration.
-        </p>
+        <p className="mt-2 text-xs text-slate-500">everything that belongs to you: credentials, resumes, and prompts.</p>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-2">
-        {SECTIONS.map((s) => (
-          <div key={s.id} className="panel p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm tracking-widest text-slate-300">{s.label}</span>
-              <span className="text-[10px] px-1.5 py-0.5 border border-grid text-slate-600 rounded-sm">
-                {s.milestone}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">{s.hint}</p>
-          </div>
+      <nav className="flex gap-1 border-b border-grid">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={[
+              "px-3 py-2 text-[11px] uppercase tracking-[0.15em] border-b-2 -mb-px transition-colors",
+              t.id === tab ? "border-neon-cyan text-neon-cyan" : "border-transparent text-slate-500 hover:text-slate-300",
+            ].join(" ")}
+          >
+            {t.label}
+            {!t.ready && <span className="ml-1.5 text-[9px] text-slate-700">soon</span>}
+          </button>
         ))}
-      </section>
+      </nav>
+
+      {tab === "ollama" && <OllamaKeysTab />}
+      {tab === "prompts" && <PromptsTab />}
+      {!active.ready && <div className="panel p-4 text-xs text-slate-500">{"hint" in active ? active.hint : null}</div>}
     </div>
   );
 }

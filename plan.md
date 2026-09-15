@@ -33,7 +33,7 @@ Self-hosted, open-source job-outreach assistant. Paste a job URL → crawl → O
 | Frontend | **React + Vite + Tailwind** | Built to `dist/`, served statically by Hono |
 | DB | **SQLite via `better-sqlite3` + Drizzle ORM** | Zero-ops, single file on a volume, typed migrations |
 | Crawling | `undici`/fetch + `@mozilla/readability` + `linkedom`, **Playwright (Chromium) fallback** | Cheap fetch first; render only when needed |
-| LLM | `ollama` npm client → `https://ollama.com` with Bearer key | Official client; `format` param for JSON-schema output |
+| LLM | Thin in-house client over `fetch` → `https://ollama.com` with Bearer key | Only two endpoints are needed (`/api/chat`, `/api/tags`); avoids a dependency and lets us map HTTP status codes onto precise error kinds (auth / quota / model / network) |
 | Validation | **Zod** (single source of truth: Zod → JSON Schema for Ollama → runtime validate) | Guarantees uniform output |
 | Resume parsing | `pdf-parse`, `mammoth` (DOCX) | Text extraction |
 | Email | `nodemailer` (SMTP) | Works with Gmail app passwords, Outlook, Fastmail, etc. |
@@ -187,7 +187,7 @@ Secrets (Ollama keys, SMTP password) are encrypted with AES-256-GCM. The encrypt
 
 **Extract stage (`services/llm/extractJd.ts`)**
 - Load `/data/prompts/extract_jd.md` (hot-reloaded on change, cached by mtime). Settings has a "Reset to default" button that re-copies the bundled prompt.
-- Call Ollama Cloud with the selected account: `chat({ model, messages, format: zodToJsonSchema(JobDescription), options: { temperature: 0 } })`.
+- Call Ollama Cloud with the selected account: `chat({ model, messages, format: JOB_DESCRIPTION_FORMAT, temperature: 0 })`, where the format is the JSON Schema derived from the shared Zod schema.
 - Parse → `JobDescription.safeParse`. On failure: retry up to 2× with the validation errors appended to the prompt ("fix these fields"). Then `failed` with the raw response saved for debugging.
 - Map Ollama errors: 401 → account invalid; 429 / quota messages → mark `quota_exhausted_until` on the account, put the job back to `queued`, and **pause the queue**. The Agent Console shows a banner with a one-click **"Resume with account ▾"** dropdown (pre-selecting the next healthy account). No silent auto-switch — the user always confirms which account is spent.
 
@@ -361,19 +361,21 @@ data/
 - [x] Nav reduced to DASHBOARD / JOBS / ACCOUNT; ACCOUNT section cards
 - [x] `AGENTS.md` with the plan-update rule
 
-### M1 — Account: Ollama keys + prompts + JD extraction `[ ]`
+### M1 — Account: Ollama keys + prompts + JD extraction `[x] complete`
 
-- [ ] `services/llm/ollamaClient.ts`: per-account client against `https://ollama.com`, Bearer auth, error mapping (401 invalid / 429 quota / network)
-- [ ] `GET /api/accounts/:id/models` proxying `ollama.com/api/tags` with that key, cached
-- [ ] Accounts CRUD: `POST/GET/PATCH/DELETE /api/accounts`, key encrypted, response exposes last-4 only
-- [ ] `POST /api/accounts/:id/test` — 1-token chat, records `last_used_at` / `last_error`
-- [ ] `services/llm/prompts.ts`: load from `data/prompts`, cache by mtime, hot reload
-- [ ] `GET /api/prompts` + `POST /api/prompts/:name/reset` (re-copy bundled default)
-- [ ] `zodToJsonSchema` helper feeding Ollama's `format` param from the shared Zod schemas
-- [ ] `services/llm/extractJd.ts`: prompt + schema → `JobDescription`, temperature 0, retry ×2 on validation failure with errors appended
-- [ ] Unit tests with mocked Ollama: happy path, malformed JSON recovery, 401, 429
-- [ ] ACCOUNT UI: keys tab (add/test/delete, default toggle, extract/score model dropdowns from live list)
-- [ ] ACCOUNT UI: prompts tab (read-only view + reset button)
+- [x] `services/llm/ollamaClient.ts`: per-account client against `https://ollama.com`, Bearer auth, error mapping (auth / quota / model / network / invalid_response) with `Retry-After` parsing
+- [x] `GET /api/accounts/:id/models` proxying `ollama.com/api/tags` with that key
+- [x] Accounts CRUD: `POST/GET/PATCH/DELETE /api/accounts`, key encrypted, response exposes last-4 only
+- [x] Default-account invariant: first key becomes default, flag moves on update, promotes a survivor on delete
+- [x] `POST /api/accounts/:id/test` — 1-token chat, records `last_used_at` / `last_error`, clears quota flag on success
+- [x] `services/llm/prompts.ts`: load from `data/prompts`, cache by mtime, hot reload, self-heal a missing file
+- [x] `GET /api/prompts` + `POST /api/prompts/:name/reset` (re-copy bundled default)
+- [x] `toOllamaFormat()` in `shared` feeding Ollama's `format` param from the same Zod schemas used for validation
+- [x] `services/llm/extractJd.ts`: prompt + schema → `JobDescription`, temperature 0, input truncation, up to 3 attempts feeding validation errors back
+- [x] Tests with mocked Ollama: 9 client cases (401/429/404/network/empty/format passthrough), 6 extraction cases, 3 prompt-loader cases, 13 route cases
+- [x] ACCOUNT UI: keys tab (add/test/delete, default toggle, extract/score model dropdowns from live list, quota + error badges)
+- [x] ACCOUNT UI: prompts tab (view + reset, edited/default badge)
+- [x] Verified against real `ollama.com`: bad key maps to a 401 `auth` error and is recorded on the account
 
 ### M2 — Jobs pipeline `[ ]`
 
@@ -440,4 +442,5 @@ data/
 | Configuration | Zero env vars, no `.env`. Single `./data` volume holds DB, secret, resumes, prompts. All config via Settings UI. |
 | License | MIT |
 | Dashboard | v1 with crawl/extract/score/email counters, driven by an append-only `events` table so metrics can grow without migrations. |
+| Ollama client | Hand-rolled ~150-line `fetch` wrapper instead of the `ollama` npm package (M1). Only `/api/chat` and `/api/tags` are used, and owning the transport is what makes precise 401-vs-429 mapping — and therefore the quota-pause flow — possible. |
 | Navigation | Only three modules: DASHBOARD, JOBS, ACCOUNT. Match and outreach live inside job detail; resumes, Ollama keys, SMTP and prompts live inside ACCOUNT. |
