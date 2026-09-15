@@ -179,3 +179,33 @@ export const DraftOutreachInput = z.object({
   recipient: z.string().email().optional(),
 });
 export type DraftOutreachInput = z.infer<typeof DraftOutreachInput>;
+
+// ─── SMTP settings ──────────────────────────────────────────────────────────
+
+export const SmtpSettingsInput = z.object({
+  host: z.string().min(1).max(200),
+  port: z.number().int().min(1).max(65535),
+  secure: z.boolean(),
+  user: z.string().min(1).max(200),
+  password: z.string().min(1).max(400),
+  fromName: z.string().min(1).max(120),
+  fromEmail: z.string().email().max(200),
+});
+export type SmtpSettingsInput = z.infer<typeof SmtpSettingsInput>;
+
+/** As returned by the API — password is never sent back. */
+export const SmtpSettingsView = z.object({
+  host: z.string(),
+  port: z.number(),
+  secure: z.boolean(),
+  user: z.string(),
+  hasPassword: z.boolean(),
+  fromName: z.string(),
+  fromEmail: z.string(),
+  updatedAt: z.string(),
+});
+export type SmtpSettingsView = z.infer<typeof SmtpSettingsView>;
+
+/** For updates: password is optional so it can be left unchanged. */
+export const SmtpSettingsUpdate = SmtpSettingsInput.partial();
+export type SmtpSettingsUpdate = z.infer<typeof SmtpSettingsUpdate>;

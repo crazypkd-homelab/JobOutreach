@@ -15,6 +15,8 @@ import type {
   ResumeQueueInput,
   ResumeView,
   RetryJobInput,
+  SmtpSettingsInput,
+  SmtpSettingsView,
   UpdateAccountInput,
   UpdateResumeInput,
 } from "@joboutreach/shared";
@@ -108,5 +110,12 @@ export const api = {
   queue: {
     status: () => request<QueueStatus>("/queue"),
     resume: (input: ResumeQueueInput) => request<QueueStatus>("/queue/resume", { method: "POST", body: JSON.stringify(input) }),
+  },
+
+  smtp: {
+    get: () => request<SmtpSettingsView>("/settings/smtp"),
+    save: (input: SmtpSettingsInput) =>
+      request<SmtpSettingsView>("/settings/smtp", { method: "PUT", body: JSON.stringify(input) }),
+    test: () => request<{ ok: true }>("/settings/smtp/test", { method: "POST" }),
   },
 };

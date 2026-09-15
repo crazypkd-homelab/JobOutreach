@@ -2,12 +2,13 @@ import { useState } from "react";
 import { OllamaKeysTab } from "./OllamaKeysTab";
 import { PromptsTab } from "./PromptsTab";
 import { ResumesTab } from "./ResumesTab";
+import { SmtpTab } from "./SmtpTab";
 
 const TABS = [
   { id: "ollama", label: "ollama keys", ready: true },
   { id: "prompts", label: "prompts", ready: true },
   { id: "resumes", label: "resumes", ready: true },
-  { id: "smtp", label: "email (smtp)", ready: false, hint: "your SMTP host, credentials and sender identity — milestone 4" },
+  { id: "smtp", label: "email (smtp)", ready: true },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -43,7 +44,7 @@ export function AccountPage() {
       {tab === "ollama" && <OllamaKeysTab />}
       {tab === "prompts" && <PromptsTab />}
       {tab === "resumes" && <ResumesTab />}
-      {!active.ready && <div className="panel p-4 text-xs text-slate-500">{"hint" in active ? active.hint : null}</div>}
+      {tab === "smtp" && <SmtpTab />}
     </div>
   );
 }

@@ -405,8 +405,8 @@ data/
 
 ### M4 — Outreach `[ ]`
 
-- [ ] SMTP settings (encrypted) + `POST /api/settings/smtp/test`
-- [ ] `services/mailer/smtp.ts`: nodemailer wrapper, `{{placeholder}}` renderer, optional resume attachment
+- [x] SMTP settings (encrypted) + `POST /api/settings/smtp/test`
+- [x] `services/mailer/smtp.ts`: nodemailer wrapper, `{{placeholder}}` renderer, optional resume attachment
 - [ ] Contacts CRUD per job; email template CRUD with seeded default referral template
 - [ ] `POST /api/outreach/send` — single explicit send, records `outreach_emails` + `events`
 - [x] "Draft with AI" endpoint personalising referral email from JD + resume
