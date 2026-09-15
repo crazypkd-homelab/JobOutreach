@@ -9,8 +9,10 @@ import type {
   QueueStatus,
   ResumeJobInput,
   ResumeQueueInput,
+  ResumeView,
   RetryJobInput,
   UpdateAccountInput,
+  UpdateResumeInput,
 } from "@joboutreach/shared";
 
 export interface DashboardResponse {
@@ -29,9 +31,14 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const isFormData = init?.body instanceof FormData;
   const res = await fetch(`/api${path}`, {
     ...init,
-    headers: init?.body ? { "Content-Type": "application/json", ...init.headers } : init?.headers,
+    headers: init?.body
+      ? isFormData
+        ? init.headers // let the browser set multipart boundary
+        : { "Content-Type": "application/json", ...init.headers }
+      : init?.headers,
   });
 
   if (!res.ok) {
@@ -61,6 +68,18 @@ export const api = {
   prompts: {
     list: () => request<PromptView[]>("/prompts"),
     reset: (name: string) => request<PromptView>(`/prompts/${name}/reset`, { method: "POST" }),
+  },
+
+  resumes: {
+    list: () => request<ResumeView[]>("/resumes"),
+    upload: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return request<ResumeView>("/resumes", { method: "POST", body: form });
+    },
+    update: (id: number, input: UpdateResumeInput) =>
+      request<ResumeView>(`/resumes/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+    remove: (id: number) => request<void>(`/resumes/${id}`, { method: "DELETE" }),
   },
 
   jobs: {

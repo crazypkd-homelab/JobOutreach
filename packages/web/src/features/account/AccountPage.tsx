@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { OllamaKeysTab } from "./OllamaKeysTab";
 import { PromptsTab } from "./PromptsTab";
+import { ResumesTab } from "./ResumesTab";
 
 const TABS = [
   { id: "ollama", label: "ollama keys", ready: true },
   { id: "prompts", label: "prompts", ready: true },
-  { id: "resumes", label: "resumes", ready: false, hint: "upload PDF/DOCX resumes and review the extracted text — milestone 3" },
+  { id: "resumes", label: "resumes", ready: true },
   { id: "smtp", label: "email (smtp)", ready: false, hint: "your SMTP host, credentials and sender identity — milestone 4" },
 ] as const;
 
@@ -41,6 +42,7 @@ export function AccountPage() {
 
       {tab === "ollama" && <OllamaKeysTab />}
       {tab === "prompts" && <PromptsTab />}
+      {tab === "resumes" && <ResumesTab />}
       {!active.ready && <div className="panel p-4 text-xs text-slate-500">{"hint" in active ? active.hint : null}</div>}
     </div>
   );

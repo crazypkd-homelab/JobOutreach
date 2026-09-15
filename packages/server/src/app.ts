@@ -14,6 +14,7 @@ import { promptRoutes } from "./routes/prompts.js";
 import { jobRoutes } from "./routes/jobs.js";
 import { queueRoutes } from "./routes/queue.js";
 import { eventsRoutes } from "./routes/events.js";
+import { resumeRoutes } from "./routes/resumes.js";
 
 export interface AppOptions {
   /** Disabled in tests to keep output readable. */
@@ -37,6 +38,7 @@ export function createApp(db: Db, deps: AppDeps, { requestLog = true }: AppOptio
   api.route("/prompts", promptRoutes());
   api.route("/jobs", jobRoutes(db, deps.accounts, deps.queue));
   api.route("/queue", queueRoutes(db, deps.accounts, deps.queue));
+  api.route("/resumes", resumeRoutes(db));
   api.route("/events", eventsRoutes(db));
   api.notFound((c) => c.json({ error: "not found" }, 404));
   app.route("/api", api);

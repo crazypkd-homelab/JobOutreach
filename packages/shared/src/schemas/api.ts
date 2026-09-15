@@ -121,3 +121,22 @@ export const PipelineEvent = z.object({
   ts: z.string(),
 });
 export type PipelineEvent = z.infer<typeof PipelineEvent>;
+
+// ─── Resumes ───────────────────────────────────────────────────────────────
+
+export const ResumeView = z.object({
+  id: z.number(),
+  name: z.string(),
+  mime: z.string().nullable(),
+  parsedText: z.string(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+});
+export type ResumeView = z.infer<typeof ResumeView>;
+
+export const UpdateResumeInput = z.object({
+  name: z.string().min(1).max(120).optional(),
+  parsedText: z.string().max(100_000).optional(),
+  isActive: z.boolean().optional(),
+});
+export type UpdateResumeInput = z.infer<typeof UpdateResumeInput>;
