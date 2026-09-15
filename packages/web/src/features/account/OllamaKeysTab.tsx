@@ -145,15 +145,16 @@ function AddAccountForm({ onAdded }: { onAdded: () => void }) {
         <Field label="label">
           <TextInput value={label} onChange={(e) => setLabel(e.target.value)} placeholder="personal" />
         </Field>
-        <Field label="api key" hint="from ollama.com/settings/keys — stored encrypted, never shown again">
+        <Field label="api key">
           <TextInput type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-…" autoComplete="off" />
         </Field>
         <div className="flex items-end">
-          <NeonButton onClick={submit} disabled={busy || label.trim().length === 0 || apiKey.trim().length < 10}>
+          <NeonButton onClick={submit} disabled={busy || label.trim().length === 0 || apiKey.trim().length < 1}>
             {busy ? "adding…" : "add"}
           </NeonButton>
         </div>
       </div>
+      <p className="text-[10px] text-slate-600">from ollama.com/settings/keys — stored encrypted, never shown again</p>
       {error && <Banner tone="error">{error}</Banner>}
     </div>
   );

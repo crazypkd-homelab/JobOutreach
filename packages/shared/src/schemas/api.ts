@@ -4,7 +4,7 @@ import { MatchScore } from "./score.js";
 
 export const CreateAccountInput = z.object({
   label: z.string().min(1).max(60),
-  apiKey: z.string().min(10),
+  apiKey: z.string().min(1),
   extractModel: z.string().min(1).optional(),
   scoreModel: z.string().min(1).optional(),
   isDefault: z.boolean().optional(),
@@ -13,7 +13,7 @@ export type CreateAccountInput = z.infer<typeof CreateAccountInput>;
 
 export const UpdateAccountInput = z.object({
   label: z.string().min(1).max(60).optional(),
-  apiKey: z.string().min(10).optional(),
+  apiKey: z.string().min(1).optional(),
   extractModel: z.string().min(1).optional(),
   scoreModel: z.string().min(1).optional(),
   isDefault: z.boolean().optional(),
