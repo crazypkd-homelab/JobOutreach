@@ -4,6 +4,7 @@ import {
   CreateJobInput,
   CreateManualJobInput,
   CreateMatchInput,
+  DraftOutreachInput,
   ResumeJobInput,
   RetryJobInput,
   type MatchScoreView,
@@ -16,6 +17,7 @@ import { ResumeService, ResumeNotFoundError } from "../services/resumes.js";
 import type { JobQueue } from "../services/pipeline/queue.js";
 import { pipelineBus } from "../services/pipeline/events.js";
 import { scoreResume } from "../services/llm/scoreResume.js";
+import { draftOutreach } from "../services/llm/draftOutreach.js";
 import { OllamaError } from "../services/llm/ollamaClient.js";
 
 type MatchScoreRow = typeof matchScores.$inferSelect;
@@ -37,6 +39,7 @@ function toMatchView(row: MatchScoreRow, resumeName: string): MatchScoreView {
 export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
   const app = new Hono();
   const jobs = new JobService(db);
+  const resumeService = new ResumeService(db);
 
   app.get("/", (c) => c.json(jobs.list()));
 
@@ -246,6 +249,34 @@ export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
     pipelineBus.log(id, "info", `Score: ${overallScore}/100 (${result.score.verdict})`);
     pipelineBus.jobStatus(id, job.status);
     return c.json(toMatchView(row, resume.name), 201);
+  });
+
+  /** Draft a referral-request email from this job and a selected resume. */
+  app.post("/:id/outreach/draft", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid job id" }, 400);
+
+    const parsed = DraftOutreachInput.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, 400);
+
+    const { resumeId, accountId, model, recipient } = parsed.data;
+    const job = jobs.get(id);
+    if (!job) return c.json({ error: "Job not found" }, 404);
+    if (!job.jd) return c.json({ error: "Job must be extracted before drafting an email" }, 400);
+
+    const resume = resumeService.get(resumeId);
+    const { client, account } = accounts.clientFor(accountId);
+    const chosenModel = model ?? account.scoreModel;
+
+    try {
+      const draft = await draftOutreach({ client, model: chosenModel, job, resumeText: resume.parsedText, recipient });
+      return c.json(draft, 200);
+    } catch (err) {
+      if (err instanceof OllamaError || err instanceof ResumeNotFoundError) {
+        return c.json({ error: err.message }, err instanceof OllamaError && err.isQuota ? 429 : 400);
+      }
+      throw err;
+    }
   });
 
   /** Delete a match score. */
