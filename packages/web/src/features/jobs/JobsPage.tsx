@@ -43,30 +43,41 @@ export function JobsPage() {
         {jobs.length === 0 ? (
           <div className="panel p-4 text-xs text-slate-500">no jobs yet. paste a URL above to get started.</div>
         ) : (
-          jobs.map((job) => (
-            <Link
-              key={job.id}
-              to={`/jobs/${job.id}`}
-              className="panel p-3 flex items-center gap-4 hover:border-neon-cyan/40 transition-colors group"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <StatusChip status={job.status} />
-                  <span className="text-sm text-slate-200 truncate group-hover:text-neon-cyan">
-                    {job.title ?? "untitled"}
-                  </span>
+          jobs.map((job) => {
+            const isActive = ["queued", "crawling", "extracting"].includes(job.status);
+            return (
+              <Link
+                key={job.id}
+                to={`/jobs/${job.id}`}
+                className="panel p-3 flex items-center gap-4 hover:border-neon-cyan/40 transition-colors group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {isActive ? (
+                      <span className="inline-flex gap-1 shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "300ms" }} />
+                      </span>
+                    ) : (
+                      <StatusChip status={job.status} />
+                    )}
+                    <span className="text-sm text-slate-200 truncate group-hover:text-neon-cyan">
+                      {job.title ?? "untitled"}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-slate-600 truncate">
+                    {job.company ?? "unknown company"}
+                    {job.location ? ` · ${job.location}` : ""}
+                    {job.sourceUrl ? ` · ${job.sourceUrl}` : " · manual paste"}
+                  </div>
                 </div>
-                <div className="mt-1 text-[10px] text-slate-600 truncate">
-                  {job.company ?? "unknown company"}
-                  {job.location ? ` · ${job.location}` : ""}
-                  {job.sourceUrl ? ` · ${job.sourceUrl}` : " · manual paste"}
+                <div className="text-[10px] text-slate-700 shrink-0">
+                  {new Date(job.createdAt).toLocaleString()}
                 </div>
-              </div>
-              <div className="text-[10px] text-slate-700 shrink-0">
-                {new Date(job.createdAt).toLocaleString()}
-              </div>
-            </Link>
-          ))
+              </Link>
+            );
+          })
         )}
       </section>
     </div>

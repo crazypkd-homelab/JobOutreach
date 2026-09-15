@@ -69,11 +69,15 @@ export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) 
 
   if (disabled) {
     return (
-      <div className="panel p-4 space-y-2">
+      <div className="panel p-4 space-y-3">
         <div className="panel-title">new job</div>
-        <div className="flex items-center gap-2 text-xs text-neon-cyan">
-          <span className="inline-block w-2 h-2 rounded-full bg-neon-cyan animate-pulseGlow" />
-          a job is already in the pipeline — wait for it to finish before starting another.
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <span className="inline-flex gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "0ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "150ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "300ms" }} />
+          </span>
+          pipeline busy
         </div>
       </div>
     );
