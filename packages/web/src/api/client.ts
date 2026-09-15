@@ -3,8 +3,10 @@ import type {
   CreateAccountInput,
   CreateJobInput,
   CreateManualJobInput,
+  CreateMatchInput,
   DashboardCounts,
   JobView,
+  MatchScoreView,
   PromptView,
   QueueStatus,
   ResumeJobInput,
@@ -92,6 +94,11 @@ export const api = {
       request<JobView>(`/jobs/${id}/text`, { method: "POST", body: JSON.stringify(input) }),
     retry: (id: number, input: RetryJobInput) =>
       request<JobView>(`/jobs/${id}/retry`, { method: "POST", body: JSON.stringify(input) }),
+    matches: (jobId: number) => request<MatchScoreView[]>(`/jobs/${jobId}/matches`),
+    scoreMatch: (jobId: number, input: CreateMatchInput) =>
+      request<MatchScoreView>(`/jobs/${jobId}/matches`, { method: "POST", body: JSON.stringify(input) }),
+    deleteMatch: (jobId: number, matchId: number) =>
+      request<void>(`/jobs/${jobId}/matches/${matchId}`, { method: "DELETE" }),
   },
 
   queue: {

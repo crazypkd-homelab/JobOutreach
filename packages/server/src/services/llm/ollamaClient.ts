@@ -31,6 +31,8 @@ export interface ChatOptions {
   /** JSON Schema for structured output. */
   format?: Record<string, unknown>;
   temperature?: number;
+  /** Fixed seed for deterministic output (same input → same output). */
+  seed?: number;
   /** Cheap connectivity check; keeps the response to a single token. */
   maxTokens?: number;
   signal?: AbortSignal;
@@ -125,6 +127,7 @@ export class OllamaClient {
         ...(opts.format ? { format: opts.format } : {}),
         options: {
           temperature: opts.temperature ?? 0,
+          ...(opts.seed !== undefined ? { seed: opts.seed } : {}),
           ...(opts.maxTokens ? { num_predict: opts.maxTokens } : {}),
         },
       }),

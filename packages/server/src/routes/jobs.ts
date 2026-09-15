@@ -1,16 +1,38 @@
 import { Hono } from "hono";
+import { eq, desc } from "drizzle-orm";
 import {
   CreateJobInput,
   CreateManualJobInput,
+  CreateMatchInput,
   ResumeJobInput,
   RetryJobInput,
+  type MatchScoreView,
 } from "@joboutreach/shared";
 import type { Db } from "../db/client.js";
-import { AccountService } from "../services/accounts.js";
+import { jobs as jobsTable, matchScores, resumes } from "../db/schema.js";
+import { AccountService, AccountNotFoundError } from "../services/accounts.js";
 import { JobService } from "../services/jobs.js";
-import { AccountNotFoundError } from "../services/accounts.js";
+import { ResumeService, ResumeNotFoundError } from "../services/resumes.js";
 import type { JobQueue } from "../services/pipeline/queue.js";
 import { pipelineBus } from "../services/pipeline/events.js";
+import { scoreResume } from "../services/llm/scoreResume.js";
+import { OllamaError } from "../services/llm/ollamaClient.js";
+
+type MatchScoreRow = typeof matchScores.$inferSelect;
+
+function toMatchView(row: MatchScoreRow, resumeName: string): MatchScoreView {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    resumeId: row.resumeId,
+    resumeName,
+    ollamaAccountId: row.ollamaAccountId,
+    modelUsed: row.modelUsed,
+    score: row.scoreJson as MatchScoreView["score"],
+    overallScore: row.overallScore,
+    createdAt: row.createdAt,
+  };
+}
 
 export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
   const app = new Hono();
@@ -114,6 +136,131 @@ export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
       if (err instanceof AccountNotFoundError) return c.json({ error: err.message }, 404);
       throw err;
     }
+  });
+
+  /** List all match scores for a job. */
+  app.get("/:id/matches", (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid job id" }, 400);
+
+    const rows = db
+      .select({ match: matchScores, resume: resumes })
+      .from(matchScores)
+      .innerJoin(resumes, eq(matchScores.resumeId, resumes.id))
+      .where(eq(matchScores.jobId, id))
+      .orderBy(desc(matchScores.createdAt))
+      .all();
+
+    return c.json(rows.map((r) => toMatchView(r.match, r.resume.name)));
+  });
+
+  /** Score a resume against the job's extracted JD. */
+  app.post("/:id/matches", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid job id" }, 400);
+
+    const parsed = CreateMatchInput.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, 400);
+
+    const { resumeId, accountId, model } = parsed.data;
+
+    // Validate job exists and has a JD.
+    const job = db.select().from(jobsTable).where(eq(jobsTable.id, id)).get();
+    if (!job) return c.json({ error: "Job not found" }, 404);
+    if (!job.jdJson) return c.json({ error: "Job has no extracted JD — extract first" }, 400);
+
+    // Validate resume.
+    const resumeService = new ResumeService(db);
+    let resume;
+    try {
+      resume = resumeService.get(resumeId);
+    } catch (e) {
+      if (e instanceof ResumeNotFoundError) return c.json({ error: e.message }, 404);
+      throw e;
+    }
+    if (!resume.parsedText.trim()) return c.json({ error: "Resume has no parsed text" }, 400);
+
+    // Get the Ollama client and account.
+    let client, account;
+    try {
+      ({ client, account } = accounts.clientFor(accountId));
+    } catch (e) {
+      if (e instanceof AccountNotFoundError) return c.json({ error: e.message }, 404);
+      throw e;
+    }
+
+    const modelUsed = model || account.scoreModel;
+
+    pipelineBus.log(id, "info", `Scoring resume "${resume.name}" with ${modelUsed}…`);
+
+    let result;
+    try {
+      result = await scoreResume({
+        client,
+        model: modelUsed,
+        jdJson: job.jdJson,
+        resumeText: resume.parsedText,
+        onLog: (msg) => pipelineBus.log(id, "info", msg),
+      });
+    } catch (e) {
+      if (e instanceof OllamaError) {
+        pipelineBus.log(id, "error", `Scoring failed: ${e.message}`);
+        if (e.isQuota) {
+          const until = e.retryAfter ?? new Date(Date.now() + 3600_000);
+          accounts.markQuotaExhausted(accountId, until, e.message);
+        }
+        return c.json({ error: e.message, kind: e.kind }, (e.status ?? 500) as 400 | 401 | 403 | 404 | 429 | 500);
+      }
+      throw e;
+    }
+
+    // Upsert: unique index on (jobId, resumeId) means re-scoring replaces.
+    const existing = db
+      .select()
+      .from(matchScores)
+      .where(eq(matchScores.jobId, id))
+      .all()
+      .find((m) => m.resumeId === resumeId);
+
+    const scoreJson = result.score;
+    const overallScore = result.score.overall;
+
+    if (existing) {
+      const updated = db
+        .update(matchScores)
+        .set({ ollamaAccountId: accountId, modelUsed, scoreJson, overallScore })
+        .where(eq(matchScores.id, existing.id))
+        .returning()
+        .get();
+      pipelineBus.log(id, "info", `Score: ${overallScore}/100 (${result.score.verdict}) — updated`);
+      pipelineBus.jobStatus(id, job.status);
+      return c.json(toMatchView(updated, resume.name));
+    }
+
+    const row = db
+      .insert(matchScores)
+      .values({ jobId: id, resumeId, ollamaAccountId: accountId, modelUsed, scoreJson, overallScore })
+      .returning()
+      .get();
+
+    pipelineBus.log(id, "info", `Score: ${overallScore}/100 (${result.score.verdict})`);
+    pipelineBus.jobStatus(id, job.status);
+    return c.json(toMatchView(row, resume.name), 201);
+  });
+
+  /** Delete a match score. */
+  app.delete("/:id/matches/:matchId", (c) => {
+    const id = Number(c.req.param("id"));
+    const matchId = Number(c.req.param("matchId"));
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(matchId) || matchId <= 0) {
+      return c.json({ error: "Invalid id" }, 400);
+    }
+
+    const row = db.select().from(matchScores).where(eq(matchScores.id, matchId)).get();
+    if (!row || row.jobId !== id) return c.json({ error: "Match score not found" }, 404);
+
+    db.delete(matchScores).where(eq(matchScores.id, matchId)).run();
+    return c.body(null, 204);
   });
 
   return app;

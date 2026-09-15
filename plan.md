@@ -396,11 +396,11 @@ data/
 
 - [ ] `services/resumes/parse.ts`: PDF (`pdf-parse`) and DOCX (`mammoth`) → text
 - [ ] Resume upload/list/delete routes, originals in `data/resumes/`, editable `parsed_text`
-- [ ] `services/llm/scoreResume.ts`: JD JSON + resume text → `MatchScoreLLM`, then `computeMatchScore`
-- [ ] `POST /api/jobs/:id/score` (one or many resumes, account + model selectable), sequential via queue
+- [x] `services/llm/scoreResume.ts`: JD JSON + resume text → `MatchScoreLLM`, then `computeMatchScore`
+- [x] `POST /api/jobs/:id/matches` (one or many resumes, account + model selectable), sequential via queue
 - [ ] Configurable weights persisted in `settings`, injected into prompt and aggregation
 - [ ] ACCOUNT UI: resumes tab (upload, parsed-text editor, active toggle)
-- [ ] Job detail: match section — score heat-strip, breakdown, matched/missing chips, tweaks
+- [x] Job detail: match section — score heat-strip, breakdown, matched/missing chips, tweaks
 - [ ] Scoring tests with mocked Ollama + weight-change regression test
 
 ### M4 — Outreach `[ ]`
@@ -445,4 +445,5 @@ data/
 | Ollama client | Hand-rolled ~150-line `fetch` wrapper instead of the `ollama` npm package (M1). Only `/api/chat` and `/api/tags` are used, and owning the transport is what makes precise 401-vs-429 mapping — and therefore the quota-pause flow — possible. |
 | Navigation | Only three modules: DASHBOARD, JOBS, ACCOUNT. Match and outreach live inside job detail; resumes, Ollama keys, SMTP and prompts live inside ACCOUNT. |
 | ATS adapters | Greenhouse and Lever only (M2). Ashby's board API requires a token not present in the public URL, so it falls through to generic HTTP/browser crawling. Adding it later requires a URL-to-token mapping or a UI field. |
-| Playwright bundling | Marked `playwright` and `playwright-core` as `external` in tsup (M2). The bundler can't resolve playwright's dynamic `require` calls for `chromium-bidi`; keeping it external means the runtime image's `node_modules` provides it at runtime, same as `better-sqlite3`. |
+| Score endpoint naming | `POST /api/jobs/:id/matches` used instead of `:id/score` to keep the API noun-centric (a match is the resource) and make `GET /matches`/`DELETE /matches/:id` paths natural. |
+|| Playwright bundling | Marked `playwright` and `playwright-core` as `external` in tsup (M2). The bundler can't resolve playwright's dynamic `require` calls for `chromium-bidi`; keeping it external means the runtime image's `node_modules` provides it at runtime, same as `better-sqlite3`. |

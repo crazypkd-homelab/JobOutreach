@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { JobDescription, JobSourceType, JobStatus } from "./job.js";
+import { MatchScore } from "./score.js";
 
 export const CreateAccountInput = z.object({
   label: z.string().min(1).max(60),
@@ -140,3 +141,25 @@ export const UpdateResumeInput = z.object({
   isActive: z.boolean().optional(),
 });
 export type UpdateResumeInput = z.infer<typeof UpdateResumeInput>;
+
+// ─── Match scores ───────────────────────────────────────────────────────────
+
+export const MatchScoreView = z.object({
+  id: z.number(),
+  jobId: z.number(),
+  resumeId: z.number(),
+  resumeName: z.string(),
+  ollamaAccountId: z.number().nullable(),
+  modelUsed: z.string().nullable(),
+  score: MatchScore,
+  overallScore: z.number(),
+  createdAt: z.string(),
+});
+export type MatchScoreView = z.infer<typeof MatchScoreView>;
+
+export const CreateMatchInput = z.object({
+  resumeId: z.number().int().positive(),
+  accountId: z.number().int().positive(),
+  model: z.string().optional(),
+});
+export type CreateMatchInput = z.infer<typeof CreateMatchInput>;

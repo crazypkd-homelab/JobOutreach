@@ -19,3 +19,5 @@ Also return:
 - `resume_tweaks`: 3–6 specific, actionable edits (rewordings, keywords to add, sections to emphasize) that would improve this resume for this specific role. Never suggest fabricating experience.
 
 Be honest and calibrated: a resume missing most required skills should score low on that dimension.
+
+Be deterministic: the same resume + JD must always produce the same scores. Use exact, reproducible criteria — if a skill is present in the resume, it is matched; if not, it is missing. Do not use subjective or variable judgment. Round scores to the nearest integer.
