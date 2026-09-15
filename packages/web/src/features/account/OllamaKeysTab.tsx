@@ -5,6 +5,9 @@ import { Banner, Chip, Field, NeonButton, TextInput } from "../../components/ui"
 
 function AccountCard({ account, onChanged }: { account: AccountView; onChanged: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [label, setLabel] = useState(account.label);
+  const [apiKey, setApiKey] = useState("");
   const [result, setResult] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
@@ -18,6 +21,29 @@ function AccountCard({ account, onChanged }: { account: AccountView; onChanged: 
       const hint =
         err.kind === "quota" ? " — switch to another account or wait for the limit to reset" : err.kind === "auth" ? " — check the key" : "";
       setResult({ tone: "error", text: `${err.message}${hint}` });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const save = async () => {
+    const patch: { label?: string; apiKey?: string } = {};
+    if (label.trim() && label.trim() !== account.label) patch.label = label.trim();
+    if (apiKey.trim()) patch.apiKey = apiKey.trim();
+    if (Object.keys(patch).length === 0) {
+      setEditing(false);
+      return;
+    }
+    setBusy("save");
+    setResult(null);
+    try {
+      await api.accounts.update(account.id, patch);
+      setApiKey("");
+      setEditing(false);
+      onChanged();
+    } catch (e) {
+      const err = e as ApiRequestError;
+      setResult({ tone: "error", text: err.message });
     } finally {
       setBusy(null);
     }
@@ -38,6 +64,11 @@ function AccountCard({ account, onChanged }: { account: AccountView; onChanged: 
           </div>
         </div>
         <div className="flex gap-2">
+          {!editing && (
+            <NeonButton variant="ghost" disabled={busy !== null} onClick={() => { setLabel(account.label); setEditing(true); }}>
+              edit
+            </NeonButton>
+          )}
           {!account.isDefault && (
             <NeonButton variant="ghost" disabled={busy !== null} onClick={() => run("default", () => api.accounts.update(account.id, { isDefault: true }))}>
               make default
@@ -48,6 +79,37 @@ function AccountCard({ account, onChanged }: { account: AccountView; onChanged: 
           </NeonButton>
         </div>
       </div>
+
+      {editing && (
+        <div className="space-y-3 pt-2 border-t border-grid">
+          <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
+            <Field label="label">
+              <TextInput value={label} onChange={(e) => setLabel(e.target.value)} placeholder="personal" />
+            </Field>
+            <Field label="new api key" hint="leave blank to keep the current key">
+              <TextInput
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-…"
+                autoComplete="off"
+              />
+            </Field>
+          </div>
+          <div className="flex gap-2">
+            <NeonButton variant="cyan" disabled={busy !== null} onClick={save}>
+              {busy === "save" ? "saving…" : "save"}
+            </NeonButton>
+            <NeonButton
+              variant="ghost"
+              disabled={busy !== null}
+              onClick={() => { setEditing(false); setLabel(account.label); setApiKey(""); setResult(null); }}
+            >
+              cancel
+            </NeonButton>
+          </div>
+        </div>
+      )}
 
       {result && <Banner tone={result.tone}>{result.text}</Banner>}
       {!result && account.lastError && <div className="text-[10px] text-neon-red/80">last error: {account.lastError}</div>}
