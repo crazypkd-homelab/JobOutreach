@@ -5,37 +5,45 @@ import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select, TextInput } from "../../components/ui";
 import { StatusChip } from "./StatusChip";
 
-const STEPS: Array<{ key: string; label: string; statuses: string[] }> = [
-  { key: "queued", label: "queued", statuses: ["queued", "crawling", "needs_manual_input", "extracting", "extracted", "failed"] },
-  { key: "crawl", label: "crawl", statuses: ["crawling", "needs_manual_input", "extracting", "extracted", "failed"] },
-  { key: "extract", label: "extract", statuses: ["extracting", "extracted", "failed"] },
-  { key: "done", label: "done", statuses: ["extracted"] },
-];
+const STEPS = [
+  { label: "Crawl", done: ["needs_manual_input", "extracting", "extracted"] as const, active: ["crawling"] as const },
+  { label: "Extract", done: ["extracted"] as const, active: ["extracting"] as const },
+  { label: "Match", done: [] as const, active: [] as const },
+] as const;
 
 function Stepper({ status }: { status: JobView["status"] }) {
-  const activeIdx = STEPS.findIndex((s) => s.statuses.includes(status));
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0">
       {STEPS.map((step, i) => {
-        const done = i < activeIdx;
-        const active = i === activeIdx;
-        const pending = i > activeIdx;
+        const isDone = (step.done as readonly string[]).includes(status);
+        const isActive = (step.active as readonly string[]).includes(status);
+        const isFailed = status === "failed" && (i === 0 ? ["crawling"].includes(status) : i === 1 && ["extracting"].includes(status));
+        const isPending = !isDone && !isActive;
+
+        const circleColor = isDone
+          ? "border-neon-lime bg-neon-lime/20 text-neon-lime"
+          : isActive
+            ? status === "failed"
+              ? "border-neon-red text-neon-red animate-pulseGlow"
+              : "border-neon-cyan text-neon-cyan animate-pulseGlow"
+            : isFailed
+              ? "border-neon-red text-neon-red"
+              : "border-grid text-slate-700";
+
+        const lineColor = isDone ? "bg-neon-lime/40" : "bg-grid";
+
         return (
-          <div key={step.key} className="flex items-center gap-1">
-            <div
-              className={[
-                "flex items-center gap-2 px-3 py-1.5 border rounded-sm text-[11px] uppercase tracking-[0.15em] transition-all",
-                done ? "border-neon-lime/40 text-neon-lime" : "",
-                active ? `border-neon-cyan/60 text-neon-cyan bg-neon-cyan/5 ${status === "crawling" || status === "extracting" ? "animate-pulseGlow" : ""}` : "",
-                pending ? "border-grid text-slate-700" : "",
-                active && status === "failed" ? "border-neon-red/60 text-neon-red" : "",
-                active && status === "needs_manual_input" ? "border-neon-amber/60 text-neon-amber animate-pulseGlow" : "",
-              ].join(" ")}
-            >
-              <span className="text-[9px] tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-              {step.label}
+          <div key={step.label} className="flex items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${circleColor}`}>
+                {isDone && <span className="w-1.5 h-1.5 rounded-full bg-neon-lime" />}
+                {isActive && <span className={`w-1.5 h-1.5 rounded-full ${status === "failed" ? "bg-neon-red" : "bg-neon-cyan"} animate-pulseGlow`} />}
+              </div>
+              <span className={`text-[10px] uppercase tracking-[0.15em] ${isDone ? "text-neon-lime" : isActive ? (status === "failed" ? "text-neon-red" : "text-neon-cyan") : "text-slate-700"}`}>
+                {step.label}
+              </span>
             </div>
-            {i < STEPS.length - 1 && <div className={`w-4 h-px ${done ? "bg-neon-lime/40" : "bg-grid"}"`} />}
+            {i < STEPS.length - 1 && <div className={`h-px w-16 ${lineColor}`} />}
           </div>
         );
       })}

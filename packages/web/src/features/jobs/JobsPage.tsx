@@ -26,6 +26,8 @@ export function JobsPage() {
   if (error) return <Banner tone="error">{error}</Banner>;
   if (!jobs) return <div className="text-xs text-slate-600 animate-pulseGlow">loading jobs…</div>;
 
+  const hasActiveJob = jobs.some((j) => ["queued", "crawling", "extracting"].includes(j.status));
+
   return (
     <div className="space-y-5">
       <header>
@@ -34,7 +36,7 @@ export function JobsPage() {
         <p className="mt-2 text-xs text-slate-500">crawl a posting, extract the JD, score resumes, send outreach.</p>
       </header>
 
-      <NewJobForm onCreated={load} />
+      <NewJobForm onCreated={load} disabled={hasActiveJob} />
 
       <section className="space-y-2">
         <div className="panel-title">postings ({jobs.length})</div>

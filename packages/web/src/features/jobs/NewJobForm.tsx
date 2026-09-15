@@ -7,7 +7,7 @@ type Mode = "url" | "paste";
 
 const FALLBACK_MODELS = ["gpt-oss:20b", "gpt-oss:120b"];
 
-export function NewJobForm({ onCreated }: { onCreated: (job: JobView) => void }) {
+export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) => void; disabled?: boolean }) {
   const [accounts, setAccounts] = useState<AccountView[] | null>(null);
   const [mode, setMode] = useState<Mode>("url");
   const [url, setUrl] = useState("");
@@ -66,6 +66,18 @@ export function NewJobForm({ onCreated }: { onCreated: (job: JobView) => void })
   };
 
   const canSubmit = mode === "url" ? url.trim().length > 0 : text.trim().length >= 100;
+
+  if (disabled) {
+    return (
+      <div className="panel p-4 space-y-2">
+        <div className="panel-title">new job</div>
+        <div className="flex items-center gap-2 text-xs text-neon-cyan">
+          <span className="inline-block w-2 h-2 rounded-full bg-neon-cyan animate-pulseGlow" />
+          a job is already in the pipeline — wait for it to finish before starting another.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="panel p-4 space-y-4">
