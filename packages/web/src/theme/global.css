@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(0, 240, 255, 0.06), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(255, 43, 214, 0.06), transparent 50%),
+      #07090f;
+    min-height: 100vh;
+  }
+  ::selection {
+    background: rgba(0, 240, 255, 0.35);
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2937;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-panel/80 border border-grid rounded-sm backdrop-blur-sm;
+  }
+  .panel-title {
+    @apply text-[10px] uppercase tracking-[0.25em] text-slate-500;
+  }
+  .neon-text-cyan {
+    color: #00f0ff;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
+  }
+  .neon-text-magenta {
+    color: #ff2bd6;
+    text-shadow: 0 0 6px rgba(255, 43, 214, 0.8);
+  }
+  .neon-text-lime {
+    color: #b6ff00;
+    text-shadow: 0 0 6px rgba(182, 255, 0, 0.8);
+  }
+  .scanlines::before {
+    content: "";
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
