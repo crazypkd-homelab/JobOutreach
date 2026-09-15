@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AccountView, MatchScoreView, ResumeView } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select } from "../../components/ui";
@@ -175,47 +175,44 @@ export function ScoreMatchForm({ jobId, onScore }: { jobId: number; onScore?: ()
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="min-w-[8rem]">
-        <Field label="resume">
-          <Select value={resumeId ?? ""} onChange={(e) => setResumeId(Number(e.target.value))}>
-            {activeResumes.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </Select>
-        </Field>
+    <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+      <Field label="resume">
+        <Select value={resumeId ?? ""} onChange={(e) => setResumeId(Number(e.target.value))}>
+          {activeResumes.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="account">
+        <Select value={accountId ?? ""} onChange={(e) => { setAccountId(Number(e.target.value)); const a = accounts.find((x) => x.id === Number(e.target.value)); if (a) setModel(a.scoreModel || "gpt-oss:120b"); }}>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id} disabled={a.quotaExhausted}>
+              {a.label} {a.quotaExhausted ? "(quota spent)" : ""}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="model">
+        <Select value={model} onChange={(e) => setModel(e.target.value)}>
+          {[...new Set([model, ...models])].filter(Boolean).map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </Select>
+      </Field>
+      <div className="flex items-end">
+        <NeonButton variant="cyan" onClick={score} disabled={busy || resumeId === null || accountId === null}>
+          {busy ? "scoring…" : "score match"}
+        </NeonButton>
       </div>
-      <div className="min-w-[6rem]">
-        <Field label="account">
-          <Select value={accountId ?? ""} onChange={(e) => { setAccountId(Number(e.target.value)); const a = accounts.find((x) => x.id === Number(e.target.value)); if (a) setModel(a.scoreModel || "gpt-oss:120b"); }}>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id} disabled={a.quotaExhausted}>
-                {a.label} {a.quotaExhausted ? "(quota spent)" : ""}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-      <div className="min-w-[8rem]">
-        <Field label="model" hint="defaults to gpt-oss:120b">
-          <Select value={model} onChange={(e) => setModel(e.target.value)}>
-            {[...new Set([model, ...models])].filter(Boolean).map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-      {error && <span className="text-[10px] text-neon-red w-full">{error}</span>}
-      <NeonButton variant="cyan" onClick={score} disabled={busy || resumeId === null || accountId === null}>
-        {busy ? "scoring…" : "score match"}
-      </NeonButton>
+      {error && <div className="col-span-full text-[10px] text-neon-red">{error}</div>}
     </div>
   );
 }
 
-export function MatchPanel({ jobId, refreshKey }: { jobId: number; refreshKey?: number }) {
+export function MatchPanel({ jobId, refreshKey, onMatchCount }: { jobId: number; refreshKey?: number; onMatchCount?: (count: number) => void }) {
   const [matches, setMatches] = useState<MatchScoreView[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const load = () => {
     api.jobs.matches(jobId)
@@ -224,6 +221,13 @@ export function MatchPanel({ jobId, refreshKey }: { jobId: number; refreshKey?: 
   };
 
   useEffect(() => { load(); }, [jobId, refreshKey]);
+
+  useEffect(() => {
+    onMatchCount?.(matches.length);
+    if (matches.length > 0 && panelRef.current) {
+      panelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [matches, onMatchCount]);
 
   const removeMatch = async (matchId: number) => {
     try {
@@ -239,7 +243,7 @@ export function MatchPanel({ jobId, refreshKey }: { jobId: number; refreshKey?: 
   if (matches.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div ref={panelRef} className="space-y-2">
       <div className="panel-title">scores ({matches.length})</div>
       {matches.map((m) => (
         <MatchResult key={m.id} match={m} onDelete={() => removeMatch(m.id)} />

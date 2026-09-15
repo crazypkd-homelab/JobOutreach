@@ -12,13 +12,13 @@ const STEPS = [
   { label: "Match", done: [] as const, active: [] as const },
 ] as const;
 
-function Stepper({ status }: { status: JobView["status"] }) {
+function Stepper({ status, hasMatch }: { status: JobView["status"]; hasMatch?: boolean }) {
   return (
     <div className="inline-flex flex-col gap-1">
       {/* Circle + line row — all items vertically centered on the circle */}
       <div className="flex items-center">
         {STEPS.map((step, i) => {
-          const isDone = (step.done as readonly string[]).includes(status);
+          const isDone = (step.done as readonly string[]).includes(status) || (step.label === "Match" && !!hasMatch);
           const isActive = (step.active as readonly string[]).includes(status);
           const isFailed = status === "failed" && (i === 0 ? ["crawling"].includes(status) : i === 1 && ["extracting"].includes(status));
 
@@ -48,7 +48,7 @@ function Stepper({ status }: { status: JobView["status"] }) {
       {/* Labels row — aligned under each circle */}
       <div className="flex items-center">
         {STEPS.map((step, i) => {
-          const isDone = (step.done as readonly string[]).includes(status);
+          const isDone = (step.done as readonly string[]).includes(status) || (step.label === "Match" && !!hasMatch);
           const isActive = (step.active as readonly string[]).includes(status);
           return (
             <div key={step.label} className="flex items-center">
@@ -276,6 +276,7 @@ export function JobDetailPage() {
   const [job, setJob] = useState<JobView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scoreCount, setScoreCount] = useState(0);
+  const [hasMatch, setHasMatch] = useState(false);
 
   const load = () => {
     if (Number.isInteger(jobId) && jobId > 0) {
@@ -315,18 +316,30 @@ export function JobDetailPage() {
         </div>
       </header>
 
-      <Stepper status={job.status} />
+      <Stepper status={job.status} hasMatch={hasMatch} />
 
       {job.status === "needs_manual_input" && <PasteTerminal job={job} onResumed={load} />}
       {job.status === "failed" && <RetryPanel job={job} onRetried={load} />}
       {job.jd && (
         <div className="panel p-4">
-          <ScoreMatchForm jobId={job.id} onScore={() => setScoreCount((c) => c + 1)} />
+          <ScoreMatchForm
+            jobId={job.id}
+            onScore={() => {
+              setScoreCount((c) => c + 1);
+              setHasMatch(true);
+            }}
+          />
         </div>
       )}
       {job.jd && <JdView jd={job.jd} />}
 
-      {job.status === "extracted" && <MatchPanel jobId={job.id} refreshKey={scoreCount} />}
+      {job.status === "extracted" && (
+        <MatchPanel
+          jobId={job.id}
+          refreshKey={scoreCount}
+          onMatchCount={(count) => setHasMatch(count > 0)}
+        />
+      )}
     </div>
   );
 }
