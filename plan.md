@@ -409,8 +409,8 @@ data/
 - [ ] `services/mailer/smtp.ts`: nodemailer wrapper, `{{placeholder}}` renderer, optional resume attachment
 - [ ] Contacts CRUD per job; email template CRUD with seeded default referral template
 - [ ] `POST /api/outreach/send` — single explicit send, records `outreach_emails` + `events`
-- [ ] Optional "draft with AI" endpoint personalising body from JD + resume
-- [ ] Job detail: contacts list, compose with live preview, sent log with errors
+- [x] "Draft with AI" endpoint personalising referral email from JD + resume
+- [~] Outreach compose view: recipient, subject, body, resume attachment, and AI draft (full send + contacts later)
 - [ ] Mailer tests with a stub transport
 
 ### M5 — Dashboard `[ ]`
@@ -447,3 +447,4 @@ data/
 | ATS adapters | Greenhouse and Lever only (M2). Ashby's board API requires a token not present in the public URL, so it falls through to generic HTTP/browser crawling. Adding it later requires a URL-to-token mapping or a UI field. |
 | Score endpoint naming | `POST /api/jobs/:id/matches` used instead of `:id/score` to keep the API noun-centric (a match is the resource) and make `GET /matches`/`DELETE /matches/:id` paths natural. |
 || Playwright bundling | Marked `playwright` and `playwright-core` as `external` in tsup (M2). The bundler can't resolve playwright's dynamic `require` calls for `chromium-bidi`; keeping it external means the runtime image's `node_modules` provides it at runtime, same as `better-sqlite3`. |
+|| Outreach compose route | Outreach compose lives at `/jobs/:id/outreach` instead of inline in the job detail page, so the email UI has enough space; it still uses job + resume data and the selected Ollama account. |

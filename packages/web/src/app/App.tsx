@@ -4,6 +4,7 @@ import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { AccountPage } from "../features/account/AccountPage";
 import { JobsPage } from "../features/jobs/JobsPage";
 import { JobDetailPage } from "../features/jobs/JobDetailPage";
+import { OutreachPage } from "../features/jobs/OutreachPage";
 
 export function App() {
   return (
@@ -12,6 +13,7 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="jobs" element={<JobsPage />} />
         <Route path="jobs/:id" element={<JobDetailPage />} />
+        <Route path="jobs/:id/outreach" element={<OutreachPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

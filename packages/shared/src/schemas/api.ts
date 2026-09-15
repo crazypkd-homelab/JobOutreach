@@ -163,3 +163,19 @@ export const CreateMatchInput = z.object({
   model: z.string().optional(),
 });
 export type CreateMatchInput = z.infer<typeof CreateMatchInput>;
+
+// ─── Outreach ───────────────────────────────────────────────────────────────
+
+export const OutreachDraft = z.object({
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1),
+});
+export type OutreachDraft = z.infer<typeof OutreachDraft>;
+
+export const DraftOutreachInput = z.object({
+  resumeId: z.number().int().positive(),
+  accountId: z.number().int().positive(),
+  model: z.string().optional(),
+  recipient: z.string().email().optional(),
+});
+export type DraftOutreachInput = z.infer<typeof DraftOutreachInput>;

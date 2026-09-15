@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import type { AccountView, JobView } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select, TextInput } from "../../components/ui";
@@ -273,6 +273,7 @@ function RetryPanel({ job, onRetried }: { job: JobView; onRetried: () => void })
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const jobId = Number(id);
+  const navigate = useNavigate();
   const [job, setJob] = useState<JobView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scoreCount, setScoreCount] = useState(0);
@@ -316,7 +317,14 @@ export function JobDetailPage() {
         </div>
       </header>
 
-      <Stepper status={job.status} hasMatch={hasMatch} />
+      <div className="flex items-center gap-4 flex-wrap">
+        <Stepper status={job.status} hasMatch={hasMatch} />
+        {hasMatch && (
+          <NeonButton variant="lime" onClick={() => navigate(`/jobs/${job.id}/outreach`)}>
+            jobreachout
+          </NeonButton>
+        )}
+      </div>
 
       {job.status === "needs_manual_input" && <PasteTerminal job={job} onResumed={load} />}
       {job.status === "failed" && <RetryPanel job={job} onRetried={load} />}

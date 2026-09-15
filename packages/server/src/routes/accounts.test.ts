@@ -152,7 +152,7 @@ describe("prompts API", () => {
   it("lists both prompts with their paths", async () => {
     const res = await app.request("/api/prompts");
     const body = await res.json();
-    expect(body.map((p: { name: string }) => p.name)).toEqual(["extract_jd", "score_resume"]);
+    expect(body.map((p: { name: string }) => p.name)).toEqual(["extract_jd", "score_resume", "outreach_email"]);
     expect(body[0].text.length).toBeGreaterThan(100);
     expect(body[0].isDefault).toBe(true);
   });

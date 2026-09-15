@@ -1,5 +1,6 @@
 import type { ZodTypeAny } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { OutreachDraft } from "./schemas/api.js";
 import { JobDescription } from "./schemas/job.js";
 import { MatchScoreLLM } from "./schemas/score.js";
 
@@ -14,3 +15,4 @@ export function toOllamaFormat(schema: ZodTypeAny): Record<string, unknown> {
 
 export const JOB_DESCRIPTION_FORMAT = toOllamaFormat(JobDescription);
 export const MATCH_SCORE_FORMAT = toOllamaFormat(MatchScoreLLM);
+export const OUTREACH_DRAFT_FORMAT = toOllamaFormat(OutreachDraft);

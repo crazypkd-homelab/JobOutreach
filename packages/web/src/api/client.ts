@@ -5,8 +5,10 @@ import type {
   CreateManualJobInput,
   CreateMatchInput,
   DashboardCounts,
+  DraftOutreachInput,
   JobView,
   MatchScoreView,
+  OutreachDraft,
   PromptView,
   QueueStatus,
   ResumeJobInput,
@@ -99,6 +101,8 @@ export const api = {
       request<MatchScoreView>(`/jobs/${jobId}/matches`, { method: "POST", body: JSON.stringify(input) }),
     deleteMatch: (jobId: number, matchId: number) =>
       request<void>(`/jobs/${jobId}/matches/${matchId}`, { method: "DELETE" }),
+    draftOutreach: (jobId: number, input: DraftOutreachInput) =>
+      request<OutreachDraft>(`/jobs/${jobId}/outreach/draft`, { method: "POST", body: JSON.stringify(input) }),
   },
 
   queue: {

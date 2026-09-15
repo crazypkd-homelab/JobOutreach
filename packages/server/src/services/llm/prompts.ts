@@ -2,7 +2,7 @@ import { copyFileSync, existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_PROMPTS_DIR, PROMPTS_DIR } from "../../config.js";
 
-export const PROMPT_NAMES = ["extract_jd", "score_resume"] as const;
+export const PROMPT_NAMES = ["extract_jd", "score_resume", "outreach_email"] as const;
 export type PromptName = (typeof PROMPT_NAMES)[number];
 
 interface Cached {
