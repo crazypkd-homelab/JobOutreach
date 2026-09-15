@@ -74,8 +74,8 @@ export function AgentConsole() {
             text: textFor(event),
             tone,
           }];
-          // Keep last 200 lines.
-          return next.length > 200 ? next.slice(-200) : next;
+          // Keep last 5 lines.
+          return next.length > 5 ? next.slice(-5) : next;
         });
       } catch {
         // ignore malformed events
@@ -108,17 +108,13 @@ export function AgentConsole() {
             <span className="text-slate-600">awaiting pipeline events…</span>
           </div>
         )}
-        {lines.map((l) => (
+        {lines.map((l, i) => (
           <div key={l.id} className="flex gap-3">
-            <span className="text-slate-700 tabular-nums">{String(l.id + 1).padStart(3, "0")}</span>
+            <span className="text-slate-700 tabular-nums">{String(i + 1).padStart(3, "0")}</span>
             <span className={`w-14 shrink-0 ${TAG_COLOR[l.tag] ?? "text-slate-400"}`}>[{l.tag}]</span>
             <span className={l.tone}>{l.text}</span>
           </div>
         ))}
-        <div className="flex gap-3">
-          <span className="text-slate-700 tabular-nums">{String(lines.length + 1).padStart(3, "0")}</span>
-          <span className="text-neon-cyan animate-blink">▍</span>
-        </div>
       </div>
     </div>
   );

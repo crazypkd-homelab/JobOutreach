@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import type { AccountView, JobView } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
@@ -64,13 +64,10 @@ function Stepper({ status }: { status: JobView["status"] }) {
   );
 }
 
-function JdView({ jd, scoreForm }: { jd: NonNullable<JobView["jd"]>; scoreForm?: ReactNode }) {
+function JdView({ jd }: { jd: NonNullable<JobView["jd"]> }) {
   return (
     <div className="panel p-4 space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="panel-title">extracted job description</div>
-        {scoreForm}
-      </div>
+      <div className="panel-title">extracted job description</div>
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div><span className="text-slate-600">title:</span> <span className="text-slate-200">{jd.title}</span></div>
         <div><span className="text-slate-600">company:</span> <span className="text-slate-200">{jd.company}</span></div>
@@ -323,16 +320,11 @@ export function JobDetailPage() {
       {job.status === "needs_manual_input" && <PasteTerminal job={job} onResumed={load} />}
       {job.status === "failed" && <RetryPanel job={job} onRetried={load} />}
       {job.jd && (
-        <JdView
-          jd={job.jd}
-          scoreForm={
-            <ScoreMatchForm
-              jobId={job.id}
-              onScore={() => setScoreCount((c) => c + 1)}
-            />
-          }
-        />
+        <div className="panel p-4">
+          <ScoreMatchForm jobId={job.id} onScore={() => setScoreCount((c) => c + 1)} />
+        </div>
       )}
+      {job.jd && <JdView jd={job.jd} />}
 
       {job.status === "extracted" && <MatchPanel jobId={job.id} refreshKey={scoreCount} />}
     </div>
