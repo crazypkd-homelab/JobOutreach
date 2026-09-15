@@ -13,40 +13,52 @@ const STEPS = [
 
 function Stepper({ status }: { status: JobView["status"] }) {
   return (
-    <div className="flex items-center gap-0">
-      {STEPS.map((step, i) => {
-        const isDone = (step.done as readonly string[]).includes(status);
-        const isActive = (step.active as readonly string[]).includes(status);
-        const isFailed = status === "failed" && (i === 0 ? ["crawling"].includes(status) : i === 1 && ["extracting"].includes(status));
-        const isPending = !isDone && !isActive;
+    <div className="inline-flex flex-col gap-1">
+      {/* Circle + line row — all items vertically centered on the circle */}
+      <div className="flex items-center">
+        {STEPS.map((step, i) => {
+          const isDone = (step.done as readonly string[]).includes(status);
+          const isActive = (step.active as readonly string[]).includes(status);
+          const isFailed = status === "failed" && (i === 0 ? ["crawling"].includes(status) : i === 1 && ["extracting"].includes(status));
 
-        const circleColor = isDone
-          ? "border-neon-lime bg-neon-lime/20 text-neon-lime"
-          : isActive
-            ? status === "failed"
-              ? "border-neon-red text-neon-red animate-pulseGlow"
-              : "border-neon-cyan text-neon-cyan animate-pulseGlow"
-            : isFailed
-              ? "border-neon-red text-neon-red"
-              : "border-grid text-slate-700";
+          const circleColor = isDone
+            ? "border-neon-lime bg-neon-lime/20 text-neon-lime"
+            : isActive
+              ? status === "failed"
+                ? "border-neon-red text-neon-red animate-pulseGlow"
+                : "border-neon-cyan text-neon-cyan animate-pulseGlow"
+              : isFailed
+                ? "border-neon-red text-neon-red"
+                : "border-grid text-slate-700";
 
-        const lineColor = isDone ? "bg-neon-lime/40" : "bg-grid";
+          const lineColor = isDone ? "bg-neon-lime/40" : "bg-grid";
 
-        return (
-          <div key={step.label} className="flex items-center">
-            <div className="flex flex-col items-center gap-1">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${circleColor}`}>
+          return (
+            <div key={step.label} className="flex items-center">
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${circleColor}`}>
                 {isDone && <span className="w-1.5 h-1.5 rounded-full bg-neon-lime" />}
                 {isActive && <span className={`w-1.5 h-1.5 rounded-full ${status === "failed" ? "bg-neon-red" : "bg-neon-cyan"} animate-pulseGlow`} />}
               </div>
-              <span className={`text-[10px] uppercase tracking-[0.15em] ${isDone ? "text-neon-lime" : isActive ? (status === "failed" ? "text-neon-red" : "text-neon-cyan") : "text-slate-700"}`}>
+              {i < STEPS.length - 1 && <div className={`h-px w-16 ${lineColor}`} />}
+            </div>
+          );
+        })}
+      </div>
+      {/* Labels row — aligned under each circle */}
+      <div className="flex items-center">
+        {STEPS.map((step, i) => {
+          const isDone = (step.done as readonly string[]).includes(status);
+          const isActive = (step.active as readonly string[]).includes(status);
+          return (
+            <div key={step.label} className="flex items-center">
+              <span className={`w-4 text-center text-[10px] uppercase tracking-[0.15em] ${isDone ? "text-neon-lime" : isActive ? "text-neon-cyan" : "text-slate-700"}`}>
                 {step.label}
               </span>
+              {i < STEPS.length - 1 && <div className="w-16" />}
             </div>
-            {i < STEPS.length - 1 && <div className={`h-px w-16 ${lineColor}`} />}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
