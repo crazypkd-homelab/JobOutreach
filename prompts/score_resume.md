@@ -21,3 +21,22 @@ Also return:
 Be honest and calibrated: a resume missing most required skills should score low on that dimension.
 
 Be deterministic: the same resume + JD must always produce the same scores. Use exact, reproducible criteria — if a skill is present in the resume, it is matched; if not, it is missing. Do not use subjective or variable judgment. Round scores to the nearest integer.
+
+Return ONLY the JSON object — no markdown, no explanation. The top-level key is `breakdown`; all five dimensions live inside it. Do not put dimension keys at the top level.
+
+Example output (fill with real values for this JD and resume):
+
+```json
+{
+  "breakdown": {
+    "required_skills": { "score": 80, "matched": ["python", "postgresql"], "missing": ["kubernetes"] },
+    "preferred_skills": { "score": 60, "matched": ["react"], "missing": ["typescript"] },
+    "experience": { "score": 70, "note": "Candidate has 5 years, just above the 4-year minimum." },
+    "domain_fit": { "score": 75, "note": "Worked in fintech, closely related to the role's finance domain." },
+    "education": { "score": 100, "note": "BS in Computer Science satisfies the requirement." }
+  },
+  "strengths": ["Strong Python backend experience", "Built production PostgreSQL schemas"],
+  "gaps": ["No Kubernetes experience listed", "No prior fintech background"],
+  "resume_tweaks": ["Add a 'Tools' section with Kubernetes if used elsewhere", "Tie an education bullet to the degree requirement"]
+}
+```
