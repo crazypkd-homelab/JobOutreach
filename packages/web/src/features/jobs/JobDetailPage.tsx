@@ -10,6 +10,7 @@ const STEPS = [
   { label: "Crawl", done: ["needs_manual_input", "extracting", "extracted"] as const, active: ["crawling"] as const },
   { label: "Extract", done: ["extracted"] as const, active: ["extracting"] as const },
   { label: "Match", done: [] as const, active: [] as const },
+  { label: "Outreach", done: [] as const, active: [] as const },
 ] as const;
 
 function Stepper({ status, hasMatch }: { status: JobView["status"]; hasMatch?: boolean }) {
@@ -19,7 +20,7 @@ function Stepper({ status, hasMatch }: { status: JobView["status"]; hasMatch?: b
       <div className="flex items-center">
         {STEPS.map((step, i) => {
           const isDone = (step.done as readonly string[]).includes(status) || (step.label === "Match" && !!hasMatch);
-          const isActive = (step.active as readonly string[]).includes(status);
+          const isActive = (step.active as readonly string[]).includes(status) || (step.label === "Outreach" && !!hasMatch);
           const isFailed = status === "failed" && (i === 0 ? ["crawling"].includes(status) : i === 1 && ["extracting"].includes(status));
 
           const circleColor = isDone
@@ -49,7 +50,7 @@ function Stepper({ status, hasMatch }: { status: JobView["status"]; hasMatch?: b
       <div className="flex items-center">
         {STEPS.map((step, i) => {
           const isDone = (step.done as readonly string[]).includes(status) || (step.label === "Match" && !!hasMatch);
-          const isActive = (step.active as readonly string[]).includes(status);
+          const isActive = (step.active as readonly string[]).includes(status) || (step.label === "Outreach" && !!hasMatch);
           return (
             <div key={step.label} className="flex items-center">
               <span className={`w-4 text-center text-[10px] uppercase tracking-[0.15em] ${isDone ? "text-neon-lime" : isActive ? "text-neon-cyan" : "text-slate-700"}`}>
@@ -317,7 +318,7 @@ export function JobDetailPage() {
         </div>
       </header>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <Stepper status={job.status} hasMatch={hasMatch} />
         {hasMatch && (
           <NeonButton variant="lime" onClick={() => navigate(`/jobs/${job.id}/outreach`)}>
