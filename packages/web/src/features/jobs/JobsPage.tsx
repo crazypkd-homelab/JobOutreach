@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import type { JobView } from "@joboutreach/shared";
 import { api } from "../../api/client";
 import { Banner } from "../../components/ui";
@@ -9,8 +9,25 @@ import { StatusChip } from "./StatusChip";
 export function JobsPage() {
   const [jobs, setJobs] = useState<JobView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const prevJobsRef = useRef<JobView[] | null>(null);
+  const navigate = useNavigate();
 
   const load = () => api.jobs.list().then(setJobs).catch((e: Error) => setError(e.message));
+
+  // If a job just finished extracting while the user is on /jobs, open it.
+  useEffect(() => {
+    const previous = prevJobsRef.current;
+    if (previous && jobs) {
+      const newlyExtracted = jobs.find((j) =>
+        j.status === "extracted" &&
+        !previous.some((p) => p.id === j.id && p.status === "extracted")
+      );
+      if (newlyExtracted) {
+        navigate(`/jobs/${newlyExtracted.id}`);
+      }
+    }
+    prevJobsRef.current = jobs;
+  }, [jobs, navigate]);
 
   useEffect(() => {
     void load();
