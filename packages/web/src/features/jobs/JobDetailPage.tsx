@@ -327,7 +327,7 @@ export function JobDetailPage() {
         <Stepper status={job.status} hasMatch={hasMatch} />
         {hasMatch && (
           <NeonButton variant="lime" onClick={() => navigate(`/jobs/${job.id}/outreach`)}>
-            jobreachout
+            outreach
           </NeonButton>
         )}
       </div>

@@ -33,7 +33,16 @@ export function Shell() {
     <div className="scanlines h-screen grid grid-cols-[220px_1fr] grid-rows-[1fr_140px]">
       <aside className="row-span-2 border-r border-grid bg-panel/60 flex flex-col">
         <div className="px-4 py-5 border-b border-grid">
-          <div className="text-lg font-bold neon-text-cyan tracking-wider">JOBOUTREACH</div>
+          <div className="flex items-center gap-2.5">
+            <svg width="28" height="28" viewBox="0 0 64 64" className="shrink-0">
+              <rect width="64" height="64" rx="12" fill="#0a0e14" />
+              <path d="M14 22 L32 36 L50 22" stroke="#22d3ee" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="14" y="20" width="36" height="24" rx="3" stroke="#22d3ee" strokeWidth="3" fill="none" />
+              <path d="M38 42 L52 42" stroke="#a3e635" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M47 37 L52 42 L47 47" stroke="#a3e635" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="text-lg font-bold neon-text-cyan tracking-wider">JOB OUTREACH</div>
+          </div>
           <div className="text-[10px] text-slate-600 mt-1">agentic outreach console v0.1</div>
         </div>
         <nav className="flex-1 py-3">

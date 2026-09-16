@@ -110,8 +110,7 @@ export function OutreachPage() {
     <div className="space-y-5">
       <header>
         <Link to={`/jobs/${jobId}`} className="text-[10px] text-slate-600 hover:text-slate-400">← back to job</Link>
-        <div className="panel-title mt-4">module 01-reach</div>
-        <h1 className="text-xl neon-text-cyan tracking-widest">JOBREACHOUT</h1>
+        <h1 className="text-xl neon-text-cyan tracking-widest">JOB OUTREACH</h1>
         <p className="mt-2 text-xs text-slate-500">
           {job.title ?? "untitled"} · {job.company ?? "unknown company"}
         </p>
