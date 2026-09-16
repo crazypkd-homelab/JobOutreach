@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { JobView } from "@joboutreach/shared";
-import { api } from "../../api/client";
-import { Banner } from "../../components/ui";
+import { api, ApiRequestError } from "../../api/client";
+import { Banner, Modal, NeonButton } from "../../components/ui";
 import { NewJobForm } from "./NewJobForm";
 import { StatusChip } from "./StatusChip";
 
@@ -12,7 +12,21 @@ export function JobsPage() {
   const prevJobsRef = useRef<JobView[] | null>(null);
   const navigate = useNavigate();
 
+  const [deleting, setDeleting] = useState<JobView | null>(null);
+
   const load = () => api.jobs.list().then(setJobs).catch((e: Error) => setError(e.message));
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    try {
+      await api.jobs.remove(deleting.id);
+      setDeleting(null);
+      void load();
+    } catch (e) {
+      setError((e as ApiRequestError).message);
+      setDeleting(null);
+    }
+  };
 
   // If a job just finished extracting while the user is on /jobs, open it.
   useEffect(() => {
@@ -48,7 +62,6 @@ export function JobsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <div className="panel-title">module 01</div>
         <h1 className="text-xl neon-text-cyan tracking-widest">JOBS</h1>
         <p className="mt-2 text-xs text-slate-500">crawl a posting, extract the JD, score resumes, send outreach.</p>
       </header>
@@ -63,40 +76,60 @@ export function JobsPage() {
           jobs.map((job) => {
             const isActive = ["queued", "crawling", "extracting"].includes(job.status);
             return (
-              <Link
+              <div
                 key={job.id}
-                to={`/jobs/${job.id}`}
                 className="panel p-3 flex items-center gap-4 hover:border-neon-cyan/40 transition-colors group"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {isActive ? (
-                      <span className="inline-flex gap-1 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "0ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "150ms" }} />
-                        <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "300ms" }} />
+                <Link to={`/jobs/${job.id}`} className="min-w-0 flex-1 flex items-center gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {isActive ? (
+                        <span className="inline-flex gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "0ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "150ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-blink" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      ) : (
+                        <StatusChip status={job.status} />
+                      )}
+                      <span className="text-sm text-slate-200 truncate group-hover:text-neon-cyan">
+                        {job.title ?? "untitled"}
                       </span>
-                    ) : (
-                      <StatusChip status={job.status} />
-                    )}
-                    <span className="text-sm text-slate-200 truncate group-hover:text-neon-cyan">
-                      {job.title ?? "untitled"}
-                    </span>
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-600 truncate">
+                      {job.company ?? "unknown company"}
+                      {job.location ? ` · ${job.location}` : ""}
+                      {job.sourceUrl ? ` · ${job.sourceUrl}` : " · manual paste"}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-slate-600 truncate">
-                    {job.company ?? "unknown company"}
-                    {job.location ? ` · ${job.location}` : ""}
-                    {job.sourceUrl ? ` · ${job.sourceUrl}` : " · manual paste"}
+                  <div className="text-[10px] text-slate-700 shrink-0">
+                    {new Date(job.createdAt).toLocaleString()}
                   </div>
-                </div>
-                <div className="text-[10px] text-slate-700 shrink-0">
-                  {new Date(job.createdAt).toLocaleString()}
-                </div>
-              </Link>
+                </Link>
+                {!isActive && (
+                  <NeonButton
+                    variant="danger"
+                    onClick={() => setDeleting(job)}
+                  >
+                    delete
+                  </NeonButton>
+                )}
+              </div>
             );
           })
         )}
       </section>
+
+      <Modal
+        open={!!deleting}
+        title="delete job"
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => setDeleting(null)}
+        confirmLabel="delete"
+        variant="danger"
+      >
+        Delete "{deleting?.title ?? "untitled"}"? This removes all matches, contacts, and outreach for this job. This cannot be undone.
+      </Modal>
     </div>
   );
 }

@@ -7,10 +7,11 @@ import {
   DraftOutreachInput,
   ResumeJobInput,
   RetryJobInput,
+  SendOutreachInput,
   type MatchScoreView,
 } from "@joboutreach/shared";
 import type { Db } from "../db/client.js";
-import { jobs as jobsTable, matchScores, resumes } from "../db/schema.js";
+import { jobs as jobsTable, matchScores, resumes, outreachEmails } from "../db/schema.js";
 import { AccountService, AccountNotFoundError } from "../services/accounts.js";
 import { JobService } from "../services/jobs.js";
 import { ResumeService, ResumeNotFoundError } from "../services/resumes.js";
@@ -19,6 +20,11 @@ import { pipelineBus } from "../services/pipeline/events.js";
 import { scoreResume } from "../services/llm/scoreResume.js";
 import { draftOutreach } from "../services/llm/draftOutreach.js";
 import { OllamaError } from "../services/llm/ollamaClient.js";
+import { SmtpSettingsService } from "../services/mailer/settings.js";
+import { SmtpMailer, SmtpError } from "../services/mailer/smtp.js";
+import { RESUMES_DIR } from "../config.js";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 type MatchScoreRow = typeof matchScores.$inferSelect;
 
@@ -84,6 +90,25 @@ export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
     const job = jobs.get(id);
     if (!job) return c.json({ error: "Job not found" }, 404);
     return c.json(job);
+  });
+
+  /** Delete a job and all its related data (matches, contacts, outreach, logs). */
+  app.delete("/:id", (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid job id" }, 400);
+
+    const job = jobs.get(id);
+    if (!job) return c.json({ error: "Job not found" }, 404);
+
+    // Don't allow deleting a job that's actively being processed.
+    if (["crawling", "extracting"].includes(job.status)) {
+      return c.json({ error: "Cannot delete a job that is currently being processed" }, 409);
+    }
+
+    const deleted = jobs.remove(id);
+    if (!deleted) return c.json({ error: "Job not found" }, 404);
+    pipelineBus.log(id, "info", "job deleted");
+    return c.body(null, 204);
   });
 
   /** Resume a job from needs_manual_input by pasting the posting text. */
@@ -276,6 +301,90 @@ export function jobRoutes(db: Db, accounts: AccountService, queue: JobQueue) {
         return c.json({ error: err.message }, err instanceof OllamaError && err.isQuota ? 429 : 400);
       }
       throw err;
+    }
+  });
+
+  /** Send the outreach email via SMTP, attaching the selected resume if any.
+   *  Records the result in outreach_emails and emits an event. */
+  app.post("/:id/outreach/send", async (c) => {
+    const id = Number(c.req.param("id"));
+    if (!Number.isInteger(id) || id <= 0) return c.json({ error: "Invalid job id" }, 400);
+
+    const parsed = SendOutreachInput.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, 400);
+
+    const { to: recipient, subject, body, resumeId } = parsed.data;
+    const job = jobs.get(id);
+    if (!job) return c.json({ error: "Job not found" }, 404);
+
+    // Build the mailer from stored SMTP settings.
+    const smtpService = new SmtpSettingsService(db);
+    const view = smtpService.get();
+    if (!view) return c.json({ error: "SMTP is not configured" }, 400);
+    const decrypted = smtpService.getDecrypted();
+    const mailer = new SmtpMailer({
+      host: decrypted.host,
+      port: decrypted.port,
+      secure: decrypted.secure,
+      user: decrypted.user,
+      password: decrypted.password,
+      fromName: decrypted.fromName,
+      fromEmail: decrypted.fromEmail,
+    });
+
+    // Resolve the resume attachment path if a resume is selected.
+    let attachments: Array<{ filename: string; path: string }> | undefined;
+    let resumeRow: { id: number; name: string; filePath: string | null } | null = null;
+    if (resumeId) {
+      const row = db.select().from(resumes).where(eq(resumes.id, resumeId)).get();
+      if (!row) return c.json({ error: "Resume not found" }, 404);
+      resumeRow = row;
+      if (row.filePath) {
+        const filePath = join(RESUMES_DIR, row.filePath);
+        if (existsSync(filePath)) {
+          attachments = [{ filename: row.name, path: filePath }];
+        } else {
+          return c.json({ error: `Resume file "${row.name}" not found on disk. Re-upload the resume and try again.` }, 400);
+        }
+      } else {
+        return c.json({ error: "Resume has no file on disk. Re-upload the resume and try again." }, 400);
+      }
+    }
+
+    try {
+      await mailer.send({ to: recipient, subject, body, attachments });
+
+      const sentAt = new Date().toISOString();
+      db.insert(outreachEmails)
+        .values({
+          jobId: id,
+          resumeId: resumeId ?? null,
+          subject,
+          body,
+          status: "sent",
+          sentAt,
+        })
+        .run();
+
+      pipelineBus.log(id, "info", `Outreach email sent to ${recipient}${attachments ? ` with resume attached` : ""}`);
+      return c.json({ ok: true, sentAt });
+    } catch (e) {
+      const err = e as SmtpError;
+      const error = err.message ?? "Failed to send email";
+      db.insert(outreachEmails)
+        .values({
+          jobId: id,
+          resumeId: resumeId ?? null,
+          subject,
+          body,
+          status: "failed",
+          error,
+        })
+        .run();
+
+      pipelineBus.log(id, "error", `Outreach email failed: ${error}`);
+      const status = err.kind === "auth" ? 401 : err.kind === "connection" ? 502 : 500;
+      return c.json({ error, kind: err.kind }, status as 400 | 401 | 500 | 502);
     }
   });
 

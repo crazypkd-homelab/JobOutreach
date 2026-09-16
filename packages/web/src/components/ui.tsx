@@ -62,3 +62,37 @@ export function Banner({ tone, children }: { tone: "error" | "ok"; children: Rea
   const cls = tone === "error" ? "border-neon-red/50 text-neon-red" : "border-neon-lime/50 text-neon-lime";
   return <div className={`panel border ${cls} px-3 py-2 text-xs`}>{children}</div>;
 }
+
+export function Modal({
+  open,
+  title,
+  children,
+  onConfirm,
+  onCancel,
+  confirmLabel = "confirm",
+  cancelLabel = "cancel",
+  variant = "danger",
+}: {
+  open: boolean;
+  title: string;
+  children: ReactNode;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: Variant;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 backdrop-blur-sm" onClick={onCancel}>
+      <div className="panel p-5 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="panel-title">{title}</div>
+        <div className="text-xs text-slate-400">{children}</div>
+        <div className="flex gap-2 justify-end">
+          <NeonButton variant="ghost" onClick={onCancel}>{cancelLabel}</NeonButton>
+          <NeonButton variant={variant} onClick={onConfirm}>{confirmLabel}</NeonButton>
+        </div>
+      </div>
+    </div>
+  );
+}

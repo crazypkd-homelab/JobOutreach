@@ -21,7 +21,9 @@ export function OutreachPage() {
   const [model, setModel] = useState("gpt-oss:120b");
   const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
   const [busy, setBusy] = useState(false);
+  const [sendBusy, setSendBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     if (!Number.isInteger(jobId) || jobId <= 0) return;
@@ -58,6 +60,7 @@ export function OutreachPage() {
     if (resumeId === null || accountId === null) return;
     setBusy(true);
     setError(null);
+    setResult(null);
     try {
       const draft = await api.jobs.draftOutreach(jobId, {
         resumeId,
@@ -72,6 +75,27 @@ export function OutreachPage() {
       setError(`${err.message}`);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const send = async () => {
+    if (!to.trim() || !subject.trim() || !body.trim()) return;
+    setSendBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await api.jobs.sendOutreach(jobId, {
+        to: to.trim(),
+        subject,
+        body,
+        resumeId: resumeId ?? undefined,
+      });
+      setResult({ tone: "ok", text: `Email sent at ${new Date(res.sentAt).toLocaleString()}.` });
+    } catch (e) {
+      const err = e as ApiRequestError;
+      setResult({ tone: "error", text: err.message });
+    } finally {
+      setSendBusy(false);
     }
   };
 
@@ -151,11 +175,22 @@ export function OutreachPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <NeonButton variant="cyan" onClick={draft} disabled={busy || resumeId === null || accountId === null}>
+          <NeonButton variant="cyan" onClick={draft} disabled={busy || sendBusy || resumeId === null || accountId === null}>
             {busy ? "drafting…" : "ai draft"}
           </NeonButton>
-          <span className="text-[10px] text-slate-600">uses the selected resume + JD to write a referral request</span>
+          <NeonButton
+            variant="lime"
+            onClick={() => void send()}
+            disabled={sendBusy || busy || !to.trim() || !subject.trim() || !body.trim()}
+          >
+            {sendBusy ? "sending…" : "send"}
+          </NeonButton>
+          <span className="text-[10px] text-slate-600">
+            {busy ? "drafting…" : "ai draft writes from resume + JD · send delivers via SMTP with resume attached"}
+          </span>
         </div>
+
+        {result && <Banner tone={result.tone}>{result.text}</Banner>}
       </div>
     </div>
   );

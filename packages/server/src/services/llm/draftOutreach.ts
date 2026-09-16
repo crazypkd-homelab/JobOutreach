@@ -16,7 +16,7 @@ export interface DraftOutreachInput {
 
 function buildUserMessage(job: JobView, resumeText: string, recipient?: string | null): string {
   const trimmed = resumeText.length > MAX_INPUT_CHARS ? `${resumeText.slice(0, MAX_INPUT_CHARS)}\n[...truncated]` : resumeText;
-  return `To: ${recipient || "the hiring contact"}\n\nJob description:\n${JSON.stringify(job.jd, null, 2)}\n\nCandidate resume:\n\n${trimmed}`;
+  return `To: ${recipient || "the hiring contact"}\n\nJob URL: ${job.sourceUrl ?? "not provided"}\n\nJob description:\n${JSON.stringify(job.jd, null, 2)}\n\nCandidate resume:\n\n${trimmed}`;
 }
 
 /**

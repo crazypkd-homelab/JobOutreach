@@ -24,8 +24,16 @@ export function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const load = () => api.dashboard().then(setData).catch((e: Error) => setError(e.message));
+
   useEffect(() => {
-    api.dashboard().then(setData).catch((e: Error) => setError(e.message));
+    void load();
+    // Refresh on any pipeline event (crawl/extract/score/email) via SSE.
+    const es = new EventSource("/api/events");
+    es.onmessage = () => void load();
+    // Fallback poll in case SSE misses an event.
+    const timer = setInterval(load, 10_000);
+    return () => { es.close(); clearInterval(timer); };
   }, []);
 
   if (error) return <div className="panel p-4 text-neon-red text-xs">api error: {error}</div>;
@@ -38,7 +46,6 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <header>
-        <div className="panel-title">module 00</div>
         <h1 className="text-xl neon-text-cyan tracking-widest">DASHBOARD</h1>
       </header>
 
@@ -51,10 +58,6 @@ export function DashboardPage() {
         <StatTile label="emails failed" value={email.failed} tone="magenta" />
       </section>
 
-      <section className="panel p-4">
-        <div className="panel-title mb-2">recent activity</div>
-        <div className="text-xs text-slate-600">no events yet. add an Ollama account and crawl your first posting.</div>
-      </section>
     </div>
   );
 }

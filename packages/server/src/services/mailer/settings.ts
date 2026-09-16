@@ -47,24 +47,38 @@ export class SmtpSettingsService {
     return JSON.parse(decrypt(row.valueEnc)) as StoredSmtp;
   }
 
-  /** Upserts the SMTP settings. */
+  /** Upserts the SMTP settings. An empty password keeps the previously stored
+   *  one (if any); the UI sends an empty password when the user leaves the field
+   *  blank on an update. Throws if no password would be set after the merge. */
   save(input: SmtpSettingsInput): SmtpSettingsView {
+    const existing = this.read();
+    const password = input.password || existing?.password;
+    if (!password) throw new Error("SMTP password is required");
     const stored: StoredSmtp = {
       host: input.host,
       port: input.port,
       secure: input.secure,
       user: input.user,
-      password: input.password,
+      password,
       fromName: input.fromName,
       fromEmail: input.fromEmail,
     };
     const enc = encrypt(JSON.stringify(stored));
-    const existing = this.db.select().from(settings).where(eq(settings.key, SMTP_KEY)).get();
     if (existing) {
       this.db.update(settings).set({ valueEnc: enc, updatedAt: new Date().toISOString() }).where(eq(settings.key, SMTP_KEY)).run();
     } else {
       this.db.insert(settings).values({ key: SMTP_KEY, valueEnc: enc }).run();
     }
     return this.get()!;
+  }
+
+  private read(): StoredSmtp | null {
+    const row = this.db.select().from(settings).where(eq(settings.key, SMTP_KEY)).get();
+    if (!row) return null;
+    try {
+      return JSON.parse(decrypt(row.valueEnc)) as StoredSmtp;
+    } catch {
+      return null;
+    }
   }
 }

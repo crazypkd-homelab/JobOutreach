@@ -20,7 +20,6 @@ export function AccountPage() {
   return (
     <div className="space-y-5">
       <header>
-        <div className="panel-title">module 02</div>
         <h1 className="text-xl neon-text-cyan tracking-widest">ACCOUNT</h1>
         <p className="mt-2 text-xs text-slate-500">everything that belongs to you: credentials, resumes, and prompts.</p>
       </header>

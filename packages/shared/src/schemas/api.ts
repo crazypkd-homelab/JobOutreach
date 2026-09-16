@@ -180,6 +180,14 @@ export const DraftOutreachInput = z.object({
 });
 export type DraftOutreachInput = z.infer<typeof DraftOutreachInput>;
 
+export const SendOutreachInput = z.object({
+  to: z.string().email().max(200),
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1),
+  resumeId: z.number().int().positive().optional(),
+});
+export type SendOutreachInput = z.infer<typeof SendOutreachInput>;
+
 // ─── SMTP settings ──────────────────────────────────────────────────────────
 
 export const SmtpSettingsInput = z.object({
@@ -187,7 +195,9 @@ export const SmtpSettingsInput = z.object({
   port: z.number().int().min(1).max(65535),
   secure: z.boolean(),
   user: z.string().min(1).max(200),
-  password: z.string().min(1).max(400),
+  // Empty string = "keep the stored password" on update; the service enforces
+  // that a password exists before saving, so initial setup still requires one.
+  password: z.string().max(400),
   fromName: z.string().min(1).max(120),
   fromEmail: z.string().email().max(200),
 });

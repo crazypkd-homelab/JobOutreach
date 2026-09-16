@@ -5,9 +5,8 @@ import { api } from "../api/client";
 import type { QueueStatus } from "@joboutreach/shared";
 
 const MODULES = [
-  { to: "/", label: "DASHBOARD", code: "00" },
-  { to: "/jobs", label: "JOBS", code: "01" },
-  { to: "/account", label: "ACCOUNT", code: "02" },
+  { to: "/jobs", label: "JOBS" },
+  { to: "/account", label: "ACCOUNT" },
 ];
 
 const QUEUE_INDICATOR: Record<string, { color: string; label: string }> = {
@@ -34,7 +33,6 @@ export function Shell() {
     <div className="scanlines h-screen grid grid-cols-[220px_1fr] grid-rows-[1fr_140px]">
       <aside className="row-span-2 border-r border-grid bg-panel/60 flex flex-col">
         <div className="px-4 py-5 border-b border-grid">
-          <div className="text-[10px] tracking-[0.3em] text-slate-500">SYS://</div>
           <div className="text-lg font-bold neon-text-cyan tracking-wider">JOBOUTREACH</div>
           <div className="text-[10px] text-slate-600 mt-1">agentic outreach console v0.1</div>
         </div>
@@ -53,7 +51,6 @@ export function Shell() {
                 ].join(" ")
               }
             >
-              <span className="text-[10px] text-slate-600 group-hover:text-slate-500">{m.code}</span>
               <span>{m.label}</span>
             </NavLink>
           ))}

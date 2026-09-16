@@ -17,10 +17,14 @@ export function smtpRoutes(db: Db) {
   app.put("/", async (c) => {
     const parsed = SmtpSettingsInput.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, 400);
-    return c.json(service.save(parsed.data));
+    try {
+      return c.json(service.save(parsed.data));
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 400);
+    }
   });
 
-  /** Sends a test email to the configured fromEmail to verify credentials. */
+  /** Verifies the SMTP server accepts the credentials. */
   app.post("/test", async (c) => {
     const view = service.get();
     if (!view) return c.json({ error: "SMTP not configured" }, 400);

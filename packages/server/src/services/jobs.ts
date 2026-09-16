@@ -116,4 +116,11 @@ export class JobService {
   nextQueued(): JobRow | null {
     return this.db.select().from(jobs).where(eq(jobs.status, "queued")).orderBy(jobs.id).limit(1).get() ?? null;
   }
+
+  /** Delete a job and all its related data (cascade handles matches, contacts,
+   *  outreach emails, pipeline logs). Returns true if a row was deleted. */
+  remove(id: number): boolean {
+    const result = this.db.delete(jobs).where(eq(jobs.id, id)).run();
+    return result.changes > 0;
+  }
 }

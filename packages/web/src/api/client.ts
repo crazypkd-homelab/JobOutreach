@@ -15,6 +15,7 @@ import type {
   ResumeQueueInput,
   ResumeView,
   RetryJobInput,
+  SendOutreachInput,
   SmtpSettingsInput,
   SmtpSettingsView,
   UpdateAccountInput,
@@ -94,6 +95,7 @@ export const api = {
     createManual: (input: CreateManualJobInput) =>
       request<JobView>("/jobs/manual", { method: "POST", body: JSON.stringify(input) }),
     get: (id: number) => request<JobView>(`/jobs/${id}`),
+    remove: (id: number) => request<void>(`/jobs/${id}`, { method: "DELETE" }),
     resumeWithText: (id: number, input: ResumeJobInput) =>
       request<JobView>(`/jobs/${id}/text`, { method: "POST", body: JSON.stringify(input) }),
     retry: (id: number, input: RetryJobInput) =>
@@ -105,6 +107,8 @@ export const api = {
       request<void>(`/jobs/${jobId}/matches/${matchId}`, { method: "DELETE" }),
     draftOutreach: (jobId: number, input: DraftOutreachInput) =>
       request<OutreachDraft>(`/jobs/${jobId}/outreach/draft`, { method: "POST", body: JSON.stringify(input) }),
+    sendOutreach: (jobId: number, input: SendOutreachInput) =>
+      request<{ ok: true; sentAt: string }>(`/jobs/${jobId}/outreach/send`, { method: "POST", body: JSON.stringify(input) }),
   },
 
   queue: {
