@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import type { AccountView, JobView } from "@joboutreach/shared";
+import { FREE_MODELS, modelLabel } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select, TextInput } from "../../components/ui";
 
 type Mode = "url" | "paste";
-
-const FALLBACK_MODELS = ["gpt-oss:20b", "gpt-oss:120b"];
 
 export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) => void; disabled?: boolean }) {
   const [accounts, setAccounts] = useState<AccountView[] | null>(null);
@@ -14,7 +13,7 @@ export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) 
   const [text, setText] = useState("");
   const [accountId, setAccountId] = useState<number | null>(null);
   const [model, setModel] = useState("");
-  const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
+  const [models, setModels] = useState<string[]>([...FREE_MODELS]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,8 +34,8 @@ export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) 
     if (accountId === null) return;
     api.accounts.models(accountId).then((list) => {
       const names = list.map((m) => m.name);
-      setModels(names.length ? [...new Set([...names, ...FALLBACK_MODELS])] : FALLBACK_MODELS);
-    }).catch(() => setModels(FALLBACK_MODELS));
+      setModels(names.length ? [...new Set([...names, ...FREE_MODELS])] : [...FREE_MODELS]);
+    }).catch(() => setModels([...FREE_MODELS]));
   }, [accountId]);
 
   if (error) return <Banner tone="error">{error}</Banner>;
@@ -58,7 +57,9 @@ export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) 
       onCreated(job);
     } catch (e) {
       const err = e as ApiRequestError;
-      const hint = err.kind === "quota" ? " — this account is out of quota, pick another" : "";
+      const hint = err.kind === "quota" ? " — this account is out of quota, pick another"
+        : err.kind === "payment" ? " — select a free model (marked \"free\" in the dropdown)"
+        : "";
       setError(`${err.message}${hint}`);
     } finally {
       setBusy(false);
@@ -141,7 +142,7 @@ export function NewJobForm({ onCreated, disabled }: { onCreated: (job: JobView) 
         <Field label="model" hint="defaults to the account's extract model">
           <Select value={model} onChange={(e) => setModel(e.target.value)}>
             {[...new Set([model, ...models])].filter(Boolean).map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m} value={m}>{modelLabel(m)}</option>
             ))}
           </Select>
         </Field>

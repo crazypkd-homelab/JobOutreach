@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import type { AccountView, JobView } from "@joboutreach/shared";
+import { FREE_MODELS, modelLabel } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select, TextInput } from "../../components/ui";
 import { StatusChip } from "./StatusChip";
@@ -207,7 +208,9 @@ function PasteTerminal({ job, onResumed }: { job: JobView; onResumed: () => void
         </Field>
         <Field label="model">
           <Select value={model} onChange={(e) => setModel(e.target.value)}>
-            <option value={model}>{model}</option>
+            {[...new Set([model, ...FREE_MODELS])].filter(Boolean).map((m) => (
+              <option key={m} value={m}>{modelLabel(m)}</option>
+            ))}
           </Select>
         </Field>
       </div>
@@ -259,7 +262,9 @@ function RetryPanel({ job, onRetried }: { job: JobView; onRetried: () => void })
         </Field>
         <Field label="model">
           <Select value={model} onChange={(e) => setModel(e.target.value)}>
-            <option value={model}>{model}</option>
+            {[...new Set([model, ...FREE_MODELS])].filter(Boolean).map((m) => (
+              <option key={m} value={m}>{modelLabel(m)}</option>
+            ))}
           </Select>
         </Field>
       </div>

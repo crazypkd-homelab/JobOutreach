@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { AccountView, JobView, ResumeView } from "@joboutreach/shared";
+import { FREE_MODELS, modelLabel } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select, TextInput } from "../../components/ui";
 
-const FALLBACK_MODELS = ["gpt-oss:120b", "gpt-oss:20b"];
+const FALLBACK_MODELS = [...FREE_MODELS];
 
 export function OutreachPage() {
   const { id } = useParams<{ id: string }>();
@@ -168,7 +169,7 @@ export function OutreachPage() {
           <Field label="model">
             <Select value={model} onChange={(e) => setModel(e.target.value)}>
               {[...new Set([model, ...models])].filter(Boolean).map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>{modelLabel(m)}</option>
               ))}
             </Select>
           </Field>

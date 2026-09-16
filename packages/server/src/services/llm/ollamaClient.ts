@@ -1,6 +1,6 @@
 const OLLAMA_HOST = "https://ollama.com";
 
-export type OllamaErrorKind = "auth" | "quota" | "model" | "network" | "server" | "invalid_response";
+export type OllamaErrorKind = "auth" | "quota" | "payment" | "model" | "network" | "server" | "invalid_response";
 
 export class OllamaError extends Error {
   constructor(
@@ -76,6 +76,13 @@ async function toOllamaError(res: Response): Promise<OllamaError> {
       `Ollama usage limit reached: ${detail || "rate limited"}`,
       res.status,
       parseRetryAfter(res.headers.get("retry-after")),
+    );
+  }
+  if (res.status === 402) {
+    return new OllamaError(
+      "payment",
+      `This model requires a subscription or usage credits. Select a free model instead. (Upgrade at https://ollama.com/upgrade)`,
+      res.status,
     );
   }
   if (res.status === 404) {

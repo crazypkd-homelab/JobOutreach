@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { AccountView, MatchScoreView, ResumeView } from "@joboutreach/shared";
+import { FREE_MODELS, modelLabel } from "@joboutreach/shared";
 import { api, ApiRequestError } from "../../api/client";
 import { Banner, Field, NeonButton, Select } from "../../components/ui";
-
-const FALLBACK_MODELS = ["gpt-oss:20b", "gpt-oss:120b"];
 
 const VERDICT_COLORS: Record<string, string> = {
   strong: "text-neon-lime border-neon-lime/40",
@@ -110,7 +109,7 @@ function MatchResult({ match, onDelete }: { match: MatchScoreView; onDelete: () 
 export function ScoreMatchForm({ jobId, onScore }: { jobId: number; onScore?: () => void }) {
   const [resumes, setResumes] = useState<ResumeView[] | null>(null);
   const [accounts, setAccounts] = useState<AccountView[]>([]);
-  const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
+  const [models, setModels] = useState<string[]>([...FREE_MODELS]);
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | null>(null);
   const [model, setModel] = useState("gpt-oss:120b");
@@ -142,8 +141,8 @@ export function ScoreMatchForm({ jobId, onScore }: { jobId: number; onScore?: ()
     if (accountId === null) return;
     api.accounts.models(accountId).then((list) => {
       const names = list.map((m) => m.name);
-      setModels(names.length ? [...new Set([...names, ...FALLBACK_MODELS])] : FALLBACK_MODELS);
-    }).catch(() => setModels(FALLBACK_MODELS));
+      setModels(names.length ? [...new Set([...names, ...FREE_MODELS])] : [...FREE_MODELS]);
+    }).catch(() => setModels([...FREE_MODELS]));
   }, [accountId]);
 
   const score = async () => {
@@ -155,7 +154,9 @@ export function ScoreMatchForm({ jobId, onScore }: { jobId: number; onScore?: ()
       onScore?.();
     } catch (e) {
       const err = e as ApiRequestError;
-      const hint = err.kind === "quota" ? " — this account is out of quota, pick another" : "";
+      const hint = err.kind === "quota" ? " — this account is out of quota, pick another"
+        : err.kind === "payment" ? " — select a free model (marked \"free\" in the dropdown)"
+        : "";
       setError(`${err.message}${hint}`);
     } finally {
       setBusy(false);
@@ -195,7 +196,7 @@ export function ScoreMatchForm({ jobId, onScore }: { jobId: number; onScore?: ()
       <Field label="model">
         <Select value={model} onChange={(e) => setModel(e.target.value)}>
           {[...new Set([model, ...models])].filter(Boolean).map((m) => (
-            <option key={m} value={m}>{m}</option>
+            <option key={m} value={m}>{modelLabel(m)}</option>
           ))}
         </Select>
       </Field>
