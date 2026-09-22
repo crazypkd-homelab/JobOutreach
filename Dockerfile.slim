@@ -1,8 +1,9 @@
 # Slim single-container build for JobOutreach.
 # This variant drops Playwright/Chromium to keep the image small; JS-heavy
 # job postings will fall back to manual paste instead of browser rendering.
+# The runtime uses Google's distroless Node image to minimize the attack surface.
 #
-# Build: docker build -f Dockerfile.slim -t crazypkd/joboutreach:slim .
+# Build: docker build -f Dockerfile.slim -t crazypkd/joboutreach:latest .
 
 # ---------- build ----------
 # Must match the Node major shipped in the runtime image (better-sqlite3 is a native module).
@@ -24,27 +25,23 @@ COPY prompts ./prompts
 RUN pnpm build
 
 # Production-only node_modules for the server (server bundle inlines @joboutreach/shared).
-RUN pnpm --filter @joboutreach/server deploy --prod --legacy /out/server
+RUN pnpm --filter @joboutreach/server deploy --prod /out/server
 
 # ---------- runtime ----------
-FROM node:24-bookworm-slim AS runtime
+FROM gcr.io/distroless/nodejs24-debian12:debug AS runtime
 ENV NODE_ENV=production
+ENV PATH=/nodejs/bin:${PATH}
 WORKDIR /app
-
-# The entrypoint drops privileges to pwuser, so create the same user the
-# Playwright-based runtime image provides.
-RUN groupadd -g 1001 pwuser && useradd -u 1001 -g 1001 -m pwuser
 
 COPY --from=build /out/server/node_modules ./node_modules
 COPY --from=build /src/packages/server/dist ./dist
 COPY --from=build /src/packages/server/drizzle ./drizzle
 COPY --from=build /src/packages/web/dist ./web
 COPY --from=build /src/prompts ./prompts
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=755 docker-entrypoint-distroless.sh /usr/local/bin/docker-entrypoint.sh
 
 VOLUME ["/data"]
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD node -e "fetch('http://localhost:8787/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]
