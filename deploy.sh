@@ -5,7 +5,8 @@
 # (re)starts the container, and verifies the health endpoint.
 #
 # Usage:
-#   ./deploy.sh              # build + up + healthcheck (default)
+#   ./deploy.sh              # build slim image + up + healthcheck (default)
+#   ./deploy.sh --full       # build full image with Playwright/Chromium
 #   ./deploy.sh --no-build   # skip the build step, just (re)start
 #   ./deploy.sh --down       # stop and remove the container
 #   ./deploy.sh --logs       # tail container logs after deploy
@@ -32,6 +33,7 @@ DO_LOGS=0
 
 for arg in "$@"; do
   case "$arg" in
+    --full)     export JO_DOCKERFILE=Dockerfile ;;
     --no-build) DO_BUILD=0 ;;
     --down)     DO_DOWN=1 ;;
     --logs)     DO_LOGS=1 ;;

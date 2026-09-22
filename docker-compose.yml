@@ -1,9 +1,11 @@
 services:
   joboutreach:
     image: ghcr.io/dharun/joboutreach:latest
-    build: .
+    build:
+      context: .
+      dockerfile: ${JO_DOCKERFILE:-Dockerfile.slim}
     ports:
-      - "8787:8787"
+      - "${JO_PORT:-8787}:8787"
     volumes:
       - ./data:/data
     restart: unless-stopped
