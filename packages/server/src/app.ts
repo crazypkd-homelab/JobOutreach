@@ -8,8 +8,10 @@ import { WEB_DIST_DIR } from "./config.js";
 import { AccountService } from "./services/accounts.js";
 import { JobService } from "./services/jobs.js";
 import type { JobQueue } from "./services/pipeline/queue.js";
+import { authMiddleware } from "./middleware/auth.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
 import { accountRoutes } from "./routes/accounts.js";
+import { authRoutes } from "./routes/auth.js";
 import { promptRoutes } from "./routes/prompts.js";
 import { jobRoutes } from "./routes/jobs.js";
 import { queueRoutes } from "./routes/queue.js";
@@ -33,7 +35,11 @@ export function createApp(db: Db, deps: AppDeps, { requestLog = true }: AppOptio
 
   app.get("/healthz", (c) => c.json({ ok: true }));
 
+  // Auth endpoints are public; everything else under /api requires a session.
+  app.route("/api/auth", authRoutes(db));
+
   const api = new Hono();
+  api.use(authMiddleware(db));
   api.route("/dashboard", dashboardRoutes(db, deps.queue));
   api.route("/accounts", accountRoutes(db));
   api.route("/prompts", promptRoutes());

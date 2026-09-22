@@ -97,6 +97,13 @@ export const outreachEmails = sqliteTable("outreach_emails", {
   createdAt: text("created_at").notNull().default(now),
 });
 
+export const users = sqliteTable("users", {
+  id: id(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: text("created_at").notNull().default(now),
+});
+
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   valueEnc: text("value_enc").notNull(),

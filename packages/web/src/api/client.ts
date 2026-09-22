@@ -1,5 +1,6 @@
 import type {
   AccountView,
+  AuthSetup,
   CreateAccountInput,
   CreateJobInput,
   CreateManualJobInput,
@@ -7,10 +8,12 @@ import type {
   DashboardCounts,
   DraftOutreachInput,
   JobView,
+  LoginInput,
   MatchScoreView,
   OutreachDraft,
   PromptView,
   QueueStatus,
+  RegisterInput,
   ResumeJobInput,
   ResumeQueueInput,
   ResumeView,
@@ -20,6 +23,7 @@ import type {
   SmtpSettingsView,
   UpdateAccountInput,
   UpdateResumeInput,
+  UserView,
 } from "@joboutreach/shared";
 
 export interface DashboardResponse {
@@ -56,6 +60,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  auth: {
+    setup: () => request<AuthSetup>("/auth/setup"),
+    me: () => request<UserView>("/auth/me"),
+    register: (input: RegisterInput) =>
+      request<UserView>("/auth/register", { method: "POST", body: JSON.stringify(input) }),
+    login: (input: LoginInput) => request<UserView>("/auth/login", { method: "POST", body: JSON.stringify(input) }),
+    logout: () => request<void>("/auth/logout", { method: "POST" }),
+  },
+
   dashboard: () => request<DashboardResponse>("/dashboard"),
 
   accounts: {

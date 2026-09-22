@@ -11,15 +11,17 @@ import { jobs as jobsTable } from "../db/schema.js";
 import { AccountService } from "../services/accounts.js";
 import { JobQueue } from "../services/pipeline/queue.js";
 import { createApp } from "../app.js";
+import { getAuthCookie } from "../test/auth.js";
 
 let app: ReturnType<typeof createApp>;
 let queue: JobQueue;
+let cookie: string;
 
 function mockFetch(impl: () => Response) {
   vi.stubGlobal("fetch", vi.fn(impl as unknown as typeof fetch));
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   bootstrap();
   const db = openDb(join(mkdtempSync(join(tmpdir(), "jo-jobs-")), "test.db"));
   runMigrations(db);
@@ -30,6 +32,7 @@ beforeEach(() => {
     db.update(jobsTable).set({ status: "extracted" }).where(eq(jobsTable.id, jobId)).run();
   });
   app = createApp(db, { accounts, queue }, { requestLog: false });
+  cookie = await getAuthCookie(app);
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -37,7 +40,7 @@ afterEach(() => vi.unstubAllGlobals());
 async function createAccount(label = "test", apiKey = "sk-test-abcd1234"): Promise<number> {
   const res = await app.request("/api/accounts", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({ label, apiKey }),
   });
   return (await res.json()).id;
@@ -48,7 +51,7 @@ describe("jobs API", () => {
     const accountId = await createAccount();
     const res = await app.request("/api/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ sourceUrl: "https://boards.greenhouse.io/test/jobs/123", accountId }),
     });
     expect(res.status).toBe(201);
@@ -63,7 +66,7 @@ describe("jobs API", () => {
     const accountId = await createAccount();
     const res = await app.request("/api/jobs/manual", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ text: "x".repeat(200), accountId }),
     });
     expect(res.status).toBe(201);
@@ -75,7 +78,7 @@ describe("jobs API", () => {
   it("rejects a job without a valid account", async () => {
     const res = await app.request("/api/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ sourceUrl: "https://example.com/job", accountId: 999 }),
     });
     expect(res.status).toBe(404);
@@ -85,7 +88,7 @@ describe("jobs API", () => {
     const accountId = await createAccount();
     const res = await app.request("/api/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ sourceUrl: "not-a-url", accountId }),
     });
     expect(res.status).toBe(400);
@@ -95,16 +98,16 @@ describe("jobs API", () => {
     const accountId = await createAccount();
     await app.request("/api/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ sourceUrl: "https://example.com/job/1", accountId }),
     });
     await app.request("/api/jobs/manual", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ text: "x".repeat(200), accountId }),
     });
 
-    const res = await app.request("/api/jobs");
+    const res = await app.request("/api/jobs", { headers: { Cookie: cookie } });
     const list: JobView[] = await res.json();
     expect(list).toHaveLength(2);
   });
@@ -113,26 +116,26 @@ describe("jobs API", () => {
     const accountId = await createAccount();
     const createRes = await app.request("/api/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ sourceUrl: "https://example.com/job/1", accountId }),
     });
     const job: JobView = await createRes.json();
 
-    const res = await app.request(`/api/jobs/${job.id}`);
+    const res = await app.request(`/api/jobs/${job.id}`, { headers: { Cookie: cookie } });
     expect(res.status).toBe(200);
     const fetched: JobView = await res.json();
     expect(fetched.id).toBe(job.id);
   });
 
   it("returns 404 for unknown job", async () => {
-    expect((await app.request("/api/jobs/999")).status).toBe(404);
+    expect((await app.request("/api/jobs/999", { headers: { Cookie: cookie } })).status).toBe(404);
   });
 
   it("resumes a needs_manual_input job with pasted text", async () => {
     const accountId = await createAccount();
     const createRes = await app.request("/api/jobs/manual", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ text: "x".repeat(200), accountId }),
     });
     const job: JobView = await createRes.json();
@@ -143,7 +146,7 @@ describe("jobs API", () => {
     // We can't access the db directly here, so test the 409 path instead.
     const res = await app.request(`/api/jobs/${job.id}/text`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ text: "y".repeat(200), accountId }),
     });
     // The job is "queued" (not needs_manual_input), so this should be 409.
@@ -153,7 +156,7 @@ describe("jobs API", () => {
 
 describe("queue API", () => {
   it("returns queue status", async () => {
-    const res = await app.request("/api/queue");
+    const res = await app.request("/api/queue", { headers: { Cookie: cookie } });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.state).toBe("idle");
@@ -163,7 +166,7 @@ describe("queue API", () => {
   it("rejects resume without a valid account", async () => {
     const res = await app.request("/api/queue/resume", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({ accountId: 999 }),
     });
     expect(res.status).toBe(404);

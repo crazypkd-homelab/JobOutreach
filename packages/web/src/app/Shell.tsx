@@ -2,6 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { AgentConsole } from "../components/AgentConsole";
 import { api } from "../api/client";
+import { useAuth } from "./AuthProvider";
+import { NeonButton } from "../components/ui";
 import type { QueueStatus } from "@joboutreach/shared";
 
 const MODULES = [
@@ -18,6 +20,7 @@ const QUEUE_INDICATOR: Record<string, { color: string; label: string }> = {
 const FALLBACK_INDICATOR = { color: "bg-neon-lime shadow-neon-lime", label: "QUEUE: IDLE" };
 
 export function Shell() {
+  const { user, logout } = useAuth();
   const [queue, setQueue] = useState<QueueStatus | null>(null);
 
   useEffect(() => {
@@ -68,6 +71,15 @@ export function Shell() {
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${q.color}`} />
           <span>{q.label}</span>
           {queue && queue.queuedCount > 0 && <span className="text-slate-700">· {queue.queuedCount} queued</span>}
+        </div>
+
+        <div className="px-4 py-3 border-t border-grid">
+          <div className="text-[10px] text-slate-500 mb-2 truncate" title={user?.username}>
+            {user?.username ?? "unknown"}
+          </div>
+          <NeonButton variant="ghost" className="w-full" onClick={() => logout()}>
+            Log out
+          </NeonButton>
         </div>
       </aside>
 

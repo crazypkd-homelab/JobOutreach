@@ -35,6 +35,28 @@ export const AccountView = z.object({
 });
 export type AccountView = z.infer<typeof AccountView>;
 
+export const RegisterInput = z.object({
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
+  password: z.string().min(8).max(128),
+});
+export type RegisterInput = z.infer<typeof RegisterInput>;
+
+export const LoginInput = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+export type LoginInput = z.infer<typeof LoginInput>;
+
+export const UserView = z.object({
+  username: z.string(),
+});
+export type UserView = z.infer<typeof UserView>;
+
+export const AuthSetup = z.object({
+  needsSetup: z.boolean(),
+});
+export type AuthSetup = z.infer<typeof AuthSetup>;
+
 export const PromptView = z.object({
   name: z.string(),
   path: z.string(),
