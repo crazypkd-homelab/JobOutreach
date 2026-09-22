@@ -81,9 +81,7 @@ function JdView({ jd }: { jd: NonNullable<JobView["jd"]> }) {
         <div>
           <span className="text-slate-600">salary:</span>{" "}
           <span className="text-slate-200">
-            {jd.salary.min ?? "?"} – {jd.salary.max ?? "?"}
-            {jd.salary.currency ? ` ${jd.salary.currency}` : ""}
-            {jd.salary.period ? `/${jd.salary.period}` : ""}
+            {jd.salary ? `${jd.salary.min ?? "?"} – ${jd.salary.max ?? "?"}${jd.salary.currency ? ` ${jd.salary.currency}` : ""}${jd.salary.period ? `/${jd.salary.period}` : ""}` : "—"}
           </span>
         </div>
       </div>

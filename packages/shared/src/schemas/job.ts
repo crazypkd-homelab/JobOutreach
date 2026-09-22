@@ -14,20 +14,20 @@ export const Salary = z.object({
 export const JobDescription = z.object({
   title: z.string(),
   company: z.string(),
-  location: z.string().nullable(),
+  location: z.string().nullish(),
   work_mode: WorkMode,
   employment_type: EmploymentType,
   seniority: Seniority,
-  years_experience_min: z.number().nullable(),
-  salary: Salary,
+  years_experience_min: z.number().nullish(),
+  salary: Salary.nullish(),
   summary: z.string(),
   responsibilities: z.array(z.string()),
   required_skills: z.array(z.string()),
   preferred_skills: z.array(z.string()),
-  education: z.string().nullable(),
+  education: z.string().nullish(),
   keywords: z.array(z.string()),
-  application_url: z.string().nullable(),
-  posted_date: z.string().nullable(),
+  application_url: z.string().nullish(),
+  posted_date: z.string().nullish(),
 });
 
 export type JobDescription = z.infer<typeof JobDescription>;

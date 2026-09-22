@@ -1,4 +1,4 @@
-# JobOutreach
+# Job Outreach
 
 Self-hosted job-outreach assistant. Paste a job URL, let Ollama Cloud extract a structured job description, score your resumes against it, and send referral-request emails — all from a single container with a neon agent-console UI.
 
@@ -48,4 +48,4 @@ prompts/          Default system prompts for extraction and scoring
 
 ## License
 
-MIT
+[PolyForm Noncommercial License 1.0.0](LICENSE) — free to use, modify, and build on, but not for commercial use. Contributions welcome!

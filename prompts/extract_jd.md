@@ -10,7 +10,7 @@ Rules:
 - `employment_type`: full_time / part_time / contract / internship / unknown.
 - `seniority`: infer from title and requirements (intern, junior, mid, senior, staff, lead, manager); otherwise unknown.
 - `years_experience_min`: the minimum years explicitly required, as an integer; otherwise null.
-- `salary`: numeric min/max in the posting's currency; `period` is "year" or "hour". Null anything not stated.
+- `salary`: if the posting mentions salary, provide numeric min/max in the posting's currency with `period` as "year" or "hour". If no salary is mentioned, set the entire `salary` field to `null` (not an object with nulls inside).
 - `summary`: at most 3 sentences describing the role.
 - `responsibilities`: bullet-level phrases, one per array item, max 12.
 - `required_skills` and `preferred_skills`: short, normalized, lowercase skill or technology names (e.g. "typescript", "kubernetes", "sql"). De-duplicate. Put "nice to have" items in `preferred_skills`.

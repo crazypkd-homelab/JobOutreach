@@ -1,21 +1,37 @@
-MIT License
+PolyForm Noncommercial License 1.0.0
+
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
 
 Copyright (c) 2026 Dharun
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Purpose
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This license lets you use, modify, and share this software for any
+noncommercial purpose, but not for commercial use. Anyone who wants
+to make commercial use of this software should contact the licensor.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+## Terms
+
+### Copyright
+
+Each contributor licenses you to do everything with this software
+that would otherwise infringe that contributor's copyright in it.
+
+### Noncommercial Only
+
+You may not sell this software, or use it in connection with any
+commercial activity, without the licensor's written permission.
+"Commercial" means any activity primarily intended for or directed
+toward commercial advantage or monetary compensation.
+
+### Notice
+
+You must give anyone who receives a copy of this software or a
+modified version of it notice of these terms.
+
+### No Liability
+
+As far as the law allows, this software comes as is, without any
+warranty or condition, and the licensor will not be liable to anyone
+for any damages related to this software or this license, under any
+kind of legal claim.
