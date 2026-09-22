@@ -1,6 +1,6 @@
 services:
   joboutreach:
-    image: ghcr.io/dharun/joboutreach:latest
+    image: crazypkd/joboutreach:latest
     build:
       context: .
       dockerfile: ${JO_DOCKERFILE:-Dockerfile.slim}
